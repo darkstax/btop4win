@@ -38,6 +38,7 @@ tab-size = 4
 #include <btop_draw.hpp>
 #include <btop_menu.hpp>
 #include "amd_temp.hpp"
+#include "lang.hpp"
 
 using std::string, std::string_view, std::vector, std::atomic, std::endl, std::cout, std::min, std::flush, std::endl;
 using std::string_literals::operator""s, std::to_string;
@@ -553,6 +554,7 @@ int main(int argc, char **argv) {
 	//? Config init
 	{	vector<string> load_warnings;
 		Config::load(Config::conf_file, load_warnings);
+		langInit(Config::getS("lang"));
 
 		if (Config::current_boxes.empty()) Config::check_boxes(Config::getS("shown_boxes"));
 		Config::set("lowcolor", (Global::arg_low_color ? true : not Config::getB("truecolor")));

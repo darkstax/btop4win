@@ -65,6 +65,7 @@ tab-size = 4
 #include <btop_draw.hpp>
 
 #include "amd_temp.hpp"
+#include "lang.hpp"
 
 #ifdef LHM_Enabled
 	#pragma comment(lib, "external\\CPPdll.lib")
@@ -995,7 +996,7 @@ namespace Shared {
 		passwd_path = "";
 
 		//? Set SE DEBUG mode
-		init_status("Setting SE Debug Mode");
+		init_status(L->init_se_debug);
 		try {
 			setWinDebug();
 		}
@@ -1004,7 +1005,7 @@ namespace Shared {
 			Logger::debug(e.what());
 		}
 
-		init_status("Getting system info");
+		init_status(L->init_sysinfo);
 		SYSTEM_INFO sysinfo;
 		GetSystemInfo(&sysinfo);
 
@@ -1037,7 +1038,7 @@ namespace Shared {
 		AmdTemp::init();
 
 	#ifdef LHM_Enabled
-		init_status("Libre Hardware Monitor Init");
+		init_status(L->init_lhm);
 		//? Start up background thread for Libre Hardware Monitor
 		if (Config::bools.at("enable_ohmr")) {
 			Cpu::OHMR_init();
@@ -1050,7 +1051,7 @@ namespace Shared {
 		Cpu::has_OHMR = false;
 	#endif
 
-		init_status("CPU Init");
+		init_status(L->init_cpu);
 		//? Init for namespace Cpu
 		Cpu::current_cpu.core_percent.insert(Cpu::current_cpu.core_percent.begin(), Shared::coreCount, {});
 		Cpu::current_cpu.temp.insert(Cpu::current_cpu.temp.begin(), Shared::coreCount + 1, {});
@@ -1066,16 +1067,16 @@ namespace Shared {
 		//? Start up loadAVG counter in background
 		std::thread(Cpu::loadAVG_init).detach();
 
-		init_status("MEM Init");
+		init_status(L->init_mem);
 		//? Init for namespace Mem
 		Mem::old_systime = GetTickCount64();
 		Mem::collect();
 
-		init_status("Connecting to WMI");
+		init_status(L->init_wmi);
 		//? Set up connection to WMI
 		Shared::WMI_init();
 
-		init_status("Starting WMI monitor");
+		init_status(L->init_wmi_mon);
 		//? Start up WMI system info collector in background
 		std::thread(Proc::WMICollect).detach();
 		Proc::WMI_trigger();
@@ -1085,7 +1086,7 @@ namespace Shared {
 			atomic_wait_for(Proc::WMI_running, true, 1000);
 		}
 
-		init_status("Drawing to screen");
+		init_status(L->init_draw);
 	}
 
 }

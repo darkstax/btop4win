@@ -26,6 +26,7 @@ tab-size = 4
 #include <robin_hood.h>
 #include <array>
 #include <tuple>
+#include "lang.hpp"
 
 using std::string, std::vector, std::deque, robin_hood::unordered_flat_map, std::atomic, std::array, std::tuple;
 
@@ -234,19 +235,21 @@ namespace Proc {
 	};
 
 	//? Translation from process state char to explanative string
-	const unordered_flat_map<char, string> proc_states = {
-		{'R', "Running"},
-		{'S', "Sleeping"},
-		{'D', "Waiting"},
-		{'Z', "Zombie"},
-		{'T', "Stopped"},
-		{'t', "Tracing"},
-		{'X', "Dead"},
-		{'x', "Dead"},
-		{'K', "Wakekill"},
-		{'W', "Unknown"},
-		{'P', "Parked"}
-	};
+	inline string proc_state_str(char c) {
+		switch (c) {
+			case 'R': return L->state_running;
+			case 'S': return L->state_sleeping;
+			case 'D': return L->state_waiting;
+			case 'Z': return L->state_zombie;
+			case 'T': return L->state_stopped;
+			case 't': return L->state_tracing;
+			case 'X': case 'x': return L->state_dead;
+			case 'K': return L->state_wakekill;
+			case 'W': return L->state_unknown;
+			case 'P': return L->state_parked;
+			default: return string(1, c);
+		}
+	}
 
 	//* Container for process information
 	struct proc_info {

@@ -181,7 +181,9 @@ namespace Config {
 		{"show_battery", 		"#* Show battery stats in top right if battery is present."},
 
 		{"log_level", 			"#* Set loglevel for \"~/.config/btop/btop.log\" levels are: \"ERROR\" \"WARNING\" \"INFO\" \"DEBUG\".\n"
-								"#* The level set includes all lower levels, i.e. \"DEBUG\" will show all logging info."}
+								"#* The level set includes all lower levels, i.e. \"DEBUG\" will show all logging info."},
+
+		{"lang", 				"#* Language / 语言: \"en\" (English) / \"zh\" (中文)."}
 	};
 
 	unordered_flat_map<string, string> strings = {
@@ -204,6 +206,7 @@ namespace Config {
 		{"disks_filter", ""},
 		{"io_graph_speeds", ""},
 		{"net_iface", ""},
+		{"lang", "en"},
 		{"log_level", "WARNING"},
 		{"proc_filter", ""},
 		{"proc_command", ""},

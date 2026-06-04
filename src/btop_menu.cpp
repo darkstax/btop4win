@@ -105,499 +105,42 @@ namespace Menu {
 
 	const array<int, 3> menu_width = {19, 12, 12};
 
-	const vector<array<string, 2>> help_text = {
-		{"Mouse 1", "Clicks buttons and selects in process list."},
-		{"Mouse scroll", "Scrolls any scrollable list/text under cursor."},
-		{"Esc, m", "Toggles main menu."},
-		{"p", "Cycle view presets forwards."},
-		{"shift + p", "Cycle view presets backwards."},
-		{"1", "Toggle CPU box."},
-		{"2", "Toggle MEM box."},
-		{"3", "Toggle NET box."},
-		{"4", "Toggle PROC box."},
-		{"d", "Toggle disks view in MEM box."},
-		{"F2, o", "Shows options."},
-		{"F1, h", "Shows this window."},
-		{"q, ctrl + c", "Quits program."},
-		{"+, -", "Add/Subtract 100ms to/from update timer."},
-		{"Up, Down", "Select in process list."},
-		{"Enter", "Show detailed information for selected process."},
-		{"Spacebar", "Expand/collapse the selected process in tree view."},
-		{"Pg Up, Pg Down", "Jump 1 page in process list."},
-		{"Home, End", "Jump to first or last page in process list."},
-		{"Left, Right", "Select previous/next sorting column."},
-		{"b, n", "Select previous/next network device."},
-		{"i", "Toggle disks io mode with big graphs."},
-		{"z", "Toggle totals reset for current network device"},
-		{"a", "Toggle auto scaling for the network graphs."},
-		{"y", "Toggle synced scaling mode for network graphs."},
-		{"f, /", "To enter a process filter."},
-		{"delete", "Clear any entered filter."},
-		{"c", "Toggle per-core cpu usage of processes."},
-		{"r", "Reverse sorting order in processes box."},
-		{"e", "Toggle processes tree view."},
-		{"s", "Toggle services/processes."},
-		{"Selected +, -", "Expand/collapse the selected process in tree view."},
-		{"Selected t", "Terminate selected process"},
-		{"", " "},
-		{"", "For bug reporting and project updates, visit:"},
-		{"", "https://github.com/aristocratos/btop4win"},
-	};
-
-	const vector<vector<vector<string>>> categories = {
-		{
-			{"color_theme",
-				"Set color theme.",
-				"",
-				"Choose from all theme files in (usually)",
-				"\"/usr/[local/]share/btop/themes\" and",
-				"\"~/.config/btop/themes\".",
-				"",
-				"\"Default\" for builtin default theme.",
-				"\"TTY\" for builtin 16-color theme.",
-				"",
-				"For theme updates see:",
-				"https://github.com/aristocratos/btop"},
-			{"theme_background",
-				"If the theme set background should be shown.",
-				"",
-				"Set to False if you want terminal background",
-				"transparency."},
-			{"truecolor",
-				"Sets if 24-bit truecolor should be used.",
-				"",
-				"Will convert 24-bit colors to 256 color",
-				"(6x6x6 color cube) if False.",
-				"",
-				"Set to False if your terminal doesn't have",
-				"truecolor support and can't convert to",
-				"256-color."},
-			{"force_tty",
-				"TTY mode.",
-				"",
-				"Set to true to force tty mode regardless",
-				"if a real tty has been detected or not.",
-				"",
-				"Will force 16-color mode and TTY theme,",
-				"set all graph symbols to \"tty\" and swap",
-				"out other non tty friendly symbols."},
-			{"vim_keys",
-				"Enable vim keys.",
-				"Set to True to enable \"h,j,k,l\" keys for",
-				"directional control in lists.",
-				"",
-				"Conflicting keys for",
-				"h (help) and k (kill)",
-				"is accessible while holding shift."},
-			{"enable_ohmr",
-				"Enable Libre Hardware Monitor Report.",
-				"",
-				"Enables monitoring of CPU temps, CPU clock",
-				"and GPU via PawnIO backend.",
-				"Requires PawnIO driver (https://pawnio.eu),",
-				"and LHM-CppExport DLL's in program folder.",
-				"https://github.com/aristocratos/LHM-CppExport",
-				"No admin needed after driver install.",
-				"",
-				"A restart is needed for this option to",
-				"take effect."},
-			{"show_gpu",
-				"Also show gpu stats in cpu and mem box.",
-				"",
-				"Only works if Libre Hardware Monitor",
-				"is also enabled."},
-			{"selected_gpu",
-				"Which GPU to display if multiple is present.",
-				"",
-				"Select GPU from list of detected devices.",
-				"Defaults to \"Auto\" for first detected",
-				"device."},
-			{"gpu_mem_override",
-				"Manually set the GPU total memory shown.",
-				"",
-				"For use when not correctly detected.",
-				"Value in MiB.",
-				"Example: \"1024\" for 1 GiB."},
-			{"presets",
-				"Define presets for the layout of the boxes.",
-				"",
-				"Preset 0 is always all boxes shown with",
-				"default settings.",
-				"Max 9 presets.",
-				"",
-				"Format: \"box_name:P:G,box_name:P:G\"",
-				"P=(0 or 1) for alternate positions.",
-				"G=graph symbol to use for box.",
-				"",
-				"Use withespace \" \" as separator between",
-				"different presets.",
-				"",
-				"Example:",
-				"\"mem:0:tty,proc:1:default cpu:0:braille\""},
-			{"shown_boxes",
-				"Manually set which boxes to show.",
-				"",
-				"Available values are \"cpu mem net proc\".",
-				"Separate values with whitespace.",
-				"",
-				"Toggle between presets with key \"p\"."},
-			{"update_ms",
-				"Update time in milliseconds.",
-				"",
-				"Recommended 2000 ms or above for better",
-				"sample times for graphs.",
-				"",
-				"Min value: 100 ms",
-				"Max value: 86400000 ms = 24 hours."},
-			{"rounded_corners",
-				"Rounded corners on boxes.",
-				"",
-				"True or False",
-				"",
-				"Is always False if TTY mode is ON."},
-			{"graph_symbol",
-				"Default symbols to use for graph creation.",
-				"",
-				"\"braille\", \"block\" or \"tty\".",
-				"",
-				"\"braille\" offers the highest resolution but",
-				"might not be included in all fonts.",
-				"",
-				"\"block\" has half the resolution of braille",
-				"but uses more common characters.",
-				"",
-				"\"tty\" uses only 3 different symbols but will",
-				"work with most fonts.",
-				"",
-				"Note that \"tty\" only has half the horizontal",
-				"resolution of the other two,",
-				"so will show a shorter historical view."},
-			{"clock_format",
-				"Draw a clock at top of screen.",
-				"(Only visible if cpu box is enabled!)",
-				"",
-				"Formatting according to strftime, empty",
-				"string to disable.",
-				"",
-				"Custom formatting options:",
-				"\"/host\" = hostname",
-				"\"/user\" = username",
-				"\"/uptime\" = system uptime",
-				"",
-				"Examples of strftime formats:",
-				"\"%X\" = locale HH:MM:SS",
-				"\"%H\" = 24h hour, \"%I\" = 12h hour",
-				"\"%M\" = minute, \"%S\" = second",
-				"\"%d\" = day, \"%m\" = month, \"%y\" = year"},
-			{"base_10_sizes",
-				"Use base 10 for bits and bytes sizes.",
-				"",
-				"Uses KB = 1000 instead of KiB = 1024,",
-				"MB = 1000KB instead of MiB = 1024KiB,",
-				"and so on.",
-				"",
-				"True or False."},
-			{"background_update",
-				"Update main ui when menus are showing.",
-				"",
-				"True or False.",
-				"",
-				"Set this to false if the menus is flickering",
-				"too much for a comfortable experience."},
-			{"show_battery",
-				"Show battery stats.",
-				"(Only visible if cpu box is enabled!)",
-				"",
-				"Show battery stats in the top right corner",
-				"if a battery is present."},
-			{"log_level",
-				"Set loglevel for error.log",
-				"",
-				"\"ERROR\", \"WARNING\", \"INFO\" and \"DEBUG\".",
-				"",
-				"The level set includes all lower levels,",
-				"i.e. \"DEBUG\" will show all logging info."}
-		},
-		{
-			{"cpu_bottom",
-				"Cpu box location.",
-				"",
-				"Show cpu box at bottom of screen instead",
-				"of top."},
-			{"cpu_wide",
-				"Cpu box width.",
-				"",
-				"Show full-width cpu box."},
-			{"graph_symbol_cpu",
-				"Graph symbol to use for graphs in cpu box.",
-				"",
-				"\"default\", \"braille\", \"block\" or \"tty\".",
-				"",
-				"\"default\" for the general default symbol.",},
-			{"cpu_graph_upper",
-				"Cpu upper graph.",
-				"",
-				"Sets the CPU stat shown in upper half of",
-				"the CPU graph.",
-				"",
-				"\"total\" = Total cpu usage.",
-				"\"user\" = User mode cpu usage.",
-				"\"system\" = Kernel mode cpu usage.",
-				"+ more depending on kernel."},
-			{"cpu_graph_lower",
-				"Cpu lower graph.",
-				"",
-				"Sets the CPU stat shown in lower half of",
-				"the CPU graph.",
-				"",
-				"\"total\" = Total cpu usage.",
-				"\"user\" = User mode cpu usage.",
-				"\"system\" = Kernel mode cpu usage.",
-				"+ more depending on kernel."},
-			{"cpu_invert_lower",
-					"Toggles orientation of the lower CPU graph.",
-					"",
-					"True or False."},
-			{"cpu_single_graph",
-					"Completely disable the lower CPU graph.",
-					"",
-					"Shows only upper CPU graph and resizes it",
-					"to fit to box height.",
-					"",
-					"True or False."},
-			{"check_temp",
-				"Enable cpu temperature reporting.",
-				"",
-				"True or False."},
-			{"show_coretemp",
-				"Show temperatures for cpu cores.",
-				"",
-				"Only works if check_temp is True and",
-				"the system is reporting core temps."},
-			{"temp_scale",
-				"Which temperature scale to use.",
-				"",
-				"Celsius, default scale.",
-				"",
-				"Fahrenheit, the american one.",
-				"",
-				"Kelvin, 0 = absolute zero, 1 degree change",
-				"equals 1 degree change in Celsius.",
-				"",
-				"Rankine, 0 = abosulte zero, 1 degree change",
-				"equals 1 degree change in Fahrenheit."},
-			{"custom_cpu_name",
-				"Custom cpu model name in cpu percentage box.",
-				"",
-				"Empty string to disable."},
-			{"show_uptime",
-				"Shows the system uptime in the CPU box.",
-				"",
-				"Can also be shown in the clock by using",
-				"\"/uptime\" in the formatting.",
-				"",
-				"True or False."},
-		},
-		{
-			{"mem_below_net",
-				"Mem box location.",
-				"",
-				"Show mem box below net box instead of above."},
-			{"graph_symbol_mem",
-				"Graph symbol to use for graphs in mem box.",
-				"",
-				"\"default\", \"braille\", \"block\" or \"tty\".",
-				"",
-				"\"default\" for the general default symbol.",},
-			{"mem_graphs",
-				"Show graphs for memory values.",
-				"",
-				"True or False."},
-			{"show_disks",
-				"Split memory box to also show disks.",
-				"",
-				"True or False."},
-			{"show_io_stat",
-				"Toggle IO activity graphs.",
-				"",
-				"Show small IO graphs that for disk activity",
-				"(disk busy time) when not in IO mode.",
-				"",
-				"True or False."},
-			{"io_mode",
-				"Toggles io mode for disks.",
-				"",
-				"Shows big graphs for disk read/write speeds",
-				"instead of used/free percentage meters.",
-				"",
-				"True or False."},
-			{"io_graph_combined",
-				"Toggle combined read and write graphs.",
-				"",
-				"Only has effect if \"io mode\" is True.",
-				"",
-				"True or False."},
-			{"io_graph_speeds",
-				"Set top speeds for the io graphs.",
-				"",
-				"Manually set which speed in MiB/s that",
-				"equals 100 percent in the io graphs.",
-				"(100 MiB/s by default).",
-				"",
-				"Format: \"device:\\speed\" separate disks with",
-				"whitespace \" \".",
-				"",
-				"Example: \"C:\\100, D:\\20\"."},
-			{"show_page",
-				"If page memory should be shown in memory box.",
-				"",
-				"True or False."},
-			{"only_physical",
-				"Filter out non physical disks.",
-				"",
-				"Set this to False to include network disks,",
-				"RAM disks and similar.",
-				"",
-				"True or False."},
-			{"disk_free_priv",
-				"Type of available disk space.",
-				"",
-				"Set to true to show how much disk space is",
-				"available for privileged users.",
-				"",
-				"Set to false to show available for normal",
-				"users."},
-			{"disks_filter",
-				"Optional filter for shown disks.",
-				"",
-				"Should be full path of a mountpoint.",
-				"Separate multiple values with",
-				"whitespace \" \".",
-				"",
-				"Begin line with \"exclude=\" to change to",
-				"exclude filter.",
-				"Oterwise defaults to \"most include\" filter.",
-				"",
-				"Example:",
-				"\"exclude=D:\\ E:\\\""},
-		},
-		{
-			{"graph_symbol_net",
-				"Graph symbol to use for graphs in net box.",
-				"",
-				"\"default\", \"braille\", \"block\" or \"tty\".",
-				"",
-				"\"default\" for the general default symbol.",},
-			{"net_download",
-				"Fixed network graph download value.",
-				"",
-				"Value in Mebibits, default \"100\".",
-				"",
-				"Can be toggled with auto button."},
-			{"net_upload",
-				"Fixed network graph upload value.",
-				"",
-				"Value in Mebibits, default \"100\".",
-				"",
-				"Can be toggled with auto button."},
-			{"net_auto",
-				"Start in network graphs auto rescaling mode.",
-				"",
-				"Ignores any values set above at start and",
-				"rescales down to 10Kibibytes at the lowest.",
-				"",
-				"True or False."},
-			{"net_sync",
-				"Network scale sync.",
-				"",
-				"Syncs the scaling for download and upload to",
-				"whichever currently has the highest scale.",
-				"",
-				"True or False."},
-			{"net_iface",
-				"Network Interface.",
-				"",
-				"Manually set the starting Network Interface.",
-				"",
-				"Will otherwise automatically choose the NIC",
-				"with the highest total download since boot."},
-		},
-		{
-			{"proc_left",
-				"Proc box location.",
-				"",
-				"Show proc box on left side of screen",
-				"instead of right."},
-			{"graph_symbol_proc",
-				"Graph symbol to use for graphs in proc box.",
-				"",
-				"\"default\", \"braille\", \"block\" or \"tty\".",
-				"",
-				"\"default\" for the general default symbol.",},
-			{"proc_sorting",
-				"Processes sorting option.",
-				"",
-				"Possible values:",
-				"\"pid\", \"program\", \"arguments\", \"threads\",",
-				"\"user\", \"memory\", \"cpu lazy\" and",
-				"\"cpu direct\".",
-				"",
-				"\"cpu lazy\" updates top process over time.",
-				"\"cpu direct\" updates top process",
-				"directly."},
-			{"proc_services",
-				"Show services.",
-				"",
-				"Show services in the process box instead of",
-				"processes.",
-				"",
-				"True or False."},
-			{"services_sorting",
-				"Services sorting option.",
-				"",
-				"Possible values:",
-				"\"service\", \"caption\", \"status\", \"memory\",",
-				"\"cpu lazy\" and \"cpu direct\".",
-				"",
-				"\"cpu lazy\" updates top service over time.",
-				"\"cpu direct\" updates top service",
-				"directly."},
-			{"proc_reversed",
-				"Reverse processes sorting order.",
-				"",
-				"True or False."},
-			{"proc_tree",
-				"Processes tree view.",
-				"",
-				"Set true to show processes grouped by",
-				"parents with lines drawn between parent",
-				"and child process."},
-			{"proc_colors",
-				"Enable colors in process view.",
-				"",
-				"True or False."},
-			{"proc_gradient",
-				"Enable process view gradient fade.",
-				"",
-				"Fades from top or current selection.",
-				"Max fade value is equal to current themes",
-				"\"inactive_fg\" color value."},
-			{"proc_per_core",
-				"Process usage per core.",
-				"",
-				"If process cpu usage should be of the core",
-				"it's running on or usage of the total",
-				"available cpu power.",
-				"",
-				"If true and process is multithreaded",
-				"cpu usage can reach over 100%."},
-			{"proc_mem_bytes",
-				"Show memory as bytes in process list.",
-				" ",
-				"Will show percentage of total memory",
-				"if False."},
+	// Build translated help_text from language data
+	const vector<array<string, 2>>& get_help_text() {
+		static vector<array<string, 2>> ht;
+		static const Lang* cached = nullptr;
+		if (cached != L) {
+			cached = L;
+			ht.clear();
+			for (int i = 0; i < L->help_count; i++)
+				ht.push_back({L->help[i].key, L->help[i].desc});
 		}
-	};
+		return ht;
+	}
+
+	// Build translated categories from language data
+	const vector<vector<vector<string>>>& get_categories() {
+		static vector<vector<vector<string>>> cats;
+		static const Lang* cached = nullptr;
+		if (cached != L) {
+			cached = L;
+			cats.clear();
+			for (int ci = 0; ci < 5; ci++) {
+				vector<vector<string>> cat;
+				for (int oi = 0; oi < L->cats[ci].option_count; oi++) {
+					auto& opt = L->cats[ci].options[oi];
+					vector<string> entry = {opt.key};
+					for (int li = 0; li < opt.line_count; li++)
+						entry.push_back(opt.lines[li]);
+					cat.push_back(std::move(entry));
+				}
+				cats.push_back(std::move(cat));
+			}
+		}
+		return cats;
+	}
+
+	// categories: now provided by get_categories()
 
 	msgBox::msgBox() {}
 	msgBox::msgBox(int width, int boxtype, vector<string> content, string title)
@@ -1036,7 +579,7 @@ namespace Menu {
 		auto& tty_mode = Config::getB("tty_mode");
 		auto& vim_keys = Config::getB("vim_keys");
 		if (max_items == 0) {
-			for (const auto& cat : categories) {
+			for (const auto& cat : get_categories()) {
 				if ((int)cat.size() > max_items) max_items = cat.size();
 			}
 		}
@@ -1080,7 +623,7 @@ namespace Menu {
 				editing = false;
 			}
 			else if (key == "enter") {
-				const auto& option = categories[selected_cat][item_height * page + selected][0];
+				const auto& option = get_categories()[selected_cat][item_height * page + selected][0];
 				if (selPred.test(isString) and Config::stringValid(option, editor.text)) {
 					Config::set(option, editor.text);
 					if (option == "custom_cpu_name") screen_redraw = true;
@@ -1121,7 +664,7 @@ namespace Menu {
 		}
 		else if (is_in(key, "enter", "e", "E") and selPred.test(isEditable)) {
 			mouseEnter:
-			const auto& option = categories[selected_cat][item_height * page + selected][0];
+			const auto& option = get_categories()[selected_cat][item_height * page + selected][0];
 			editor = Draw::TextEdit{Config::getAsString(option), selPred.test(isInt)};
 			editing = true;
 			mouse_mappings.clear();
@@ -1153,11 +696,11 @@ namespace Menu {
 			selected = 0;
 		}
 		else if (key == "tab") {
-			if (++selected_cat >= (int)categories.size()) selected_cat = 0;
+			if (++selected_cat >= (int)get_categories().size()) selected_cat = 0;
 			page = selected = 0;
 		}
 		else if (key == "shift_tab") {
-			if (--selected_cat < 0) selected_cat = (int)categories.size() - 1;
+			if (--selected_cat < 0) selected_cat = (int)get_categories().size() - 1;
 			page = selected = 0;
 		}
 		else if (is_in(key, "1", "2", "3", "4", "5") or key.starts_with("select_cat_")) {
@@ -1165,7 +708,7 @@ namespace Menu {
 			page = selected = 0;
 		}
 		else if (is_in(key, "left", "right") or (vim_keys and is_in(key, "h", "l"))) {
-			const auto& option = categories[selected_cat][item_height * page + selected][0];
+			const auto& option = get_categories()[selected_cat][item_height * page + selected][0];
 			if (selPred.test(isInt)) {
 				const int mod = (option == "update_ms" ? 100 : 1);
 				long value = Config::getI(option);
@@ -1227,10 +770,10 @@ namespace Menu {
 			Config::unlock();
 			auto& out = Global::overlay;
 			out = bg;
-			item_height = min((int)categories[selected_cat].size(), (int)floor((double)(height - 4) / 2));
-			pages = ceil((double)categories[selected_cat].size() / item_height);
+			item_height = min((int)get_categories()[selected_cat].size(), (int)floor((double)(height - 4) / 2));
+			pages = ceil((double)get_categories()[selected_cat].size() / item_height);
 			if (page > pages - 1) page = pages - 1;
-			select_max = min(item_height - 1, (int)categories[selected_cat].size() - 1 - item_height * page);
+			select_max = min(item_height - 1, (int)get_categories()[selected_cat].size() - 1 - item_height * page);
 			if (selected > select_max) {
 				selected = select_max;
 			}
@@ -1239,7 +782,7 @@ namespace Menu {
 			if (selPred.none() or last_sel != (selected_cat << 8) + selected) {
 				selPred.reset();
 				last_sel = (selected_cat << 8) + selected;
-				const auto& selOption = categories[selected_cat][item_height * page + selected][0];
+				const auto& selOption = get_categories()[selected_cat][item_height * page + selected][0];
 				if (Config::ints.contains(selOption))
 					selPred.set(isInt);
 				else if (Config::bools.contains(selOption))
@@ -1273,8 +816,8 @@ namespace Menu {
 			}
 			//? Option name and value
 			auto cy = y+9;
-			for (int c = 0, i = max(0, item_height * page); c++ < item_height and i < (int)categories[selected_cat].size(); i++) {
-				const auto& option = categories[selected_cat][i][0];
+			for (int c = 0, i = max(0, item_height * page); c++ < item_height and i < (int)get_categories()[selected_cat].size(); i++) {
+				const auto& option = get_categories()[selected_cat][i][0];
 				const auto& value = (option == "color_theme" ? fs::path(Config::getS("color_theme")).stem().string() : Config::getAsString(option));
 
 				out += Mv::to(cy++, x + 1) + (c-1 == selected ? Theme::c("selected_bg") + Theme::c("selected_fg") : Theme::c("title"))
@@ -1296,7 +839,7 @@ namespace Menu {
 					}
 					//? Description of selected option
 					out += Fx::reset + Theme::c("title") + Fx::b;
-					for (int cyy = y+7; const auto& desc : categories[selected_cat][i]) {
+					for (int cyy = y+7; const auto& desc : get_categories()[selected_cat][i]) {
 						if (cyy++ == y+7) continue;
 						else if (cyy == y+10) out += Theme::c("main_fg") + Fx::ub;
 						else if (cyy > y + height + 4) break;
@@ -1342,10 +885,10 @@ namespace Menu {
 		int retval = Changed;
 
 		if (redraw) {
-			y = max(1, Term::height/2 - 4 - (int)(help_text.size() / 2));
+			y = max(1, Term::height/2 - 4 - (int)(get_help_text().size() / 2));
 			x = Term::width/2 - 39;
-			height = min(Term::height - 6, (int)help_text.size() + 3);
-			pages = ceil((double)help_text.size() / (height - 3));
+			height = min(Term::height - 6, (int)get_help_text().size() + 3);
+			pages = ceil((double)get_help_text().size() / (height - 3));
 			page = 0;
 			bg = Draw::banner_gen(y, 0, true);
 			bg += Draw::createBox(x, y + 6, 78, height, Theme::c("hi_fg"), true, "help");
@@ -1373,9 +916,9 @@ namespace Menu {
 			}
 			auto cy = y+7;
 			out += Mv::to(cy++, x + 1) + Theme::c("title") + Fx::b + cjust("Key:", 20) + "Description:";
-			for (int c = 0, i = max(0, (height - 3) * page); c++ < height - 3 and i < (int)help_text.size(); i++) {
-				out += Mv::to(cy++, x + 1) + Theme::c("hi_fg") + Fx::b + cjust(help_text[i][0], 20)
-					+ Theme::c("main_fg") + Fx::ub + help_text[i][1];
+			for (int c = 0, i = max(0, (height - 3) * page); c++ < height - 3 and i < (int)get_help_text().size(); i++) {
+				out += Mv::to(cy++, x + 1) + Theme::c("hi_fg") + Fx::b + cjust(get_help_text()[i][0], 20)
+					+ Theme::c("main_fg") + Fx::ub + get_help_text()[i][1];
 			}
 			out += Fx::reset;
 		}

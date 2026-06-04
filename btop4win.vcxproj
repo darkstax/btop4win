@@ -381,6 +381,9 @@
     <ClCompile Include="src\btop.cpp" />
     <ClCompile Include="src\btop_collect.cpp" />
     <ClCompile Include="src\amd_temp.cpp" />
+    <ClCompile Include="src\lang.cpp" />
+    <ClCompile Include="src\lang_en.cpp" />
+    <ClCompile Include="src\lang_zh.cpp" />
     <ClCompile Include="src\btop_config.cpp" />
     <ClCompile Include="src\btop_draw.cpp" />
     <ClCompile Include="src\btop_input.cpp" />
@@ -399,6 +402,8 @@
     <ClInclude Include="src\btop_shared.hpp" />
     <ClInclude Include="src\btop_theme.hpp" />
     <ClInclude Include="src\btop_tools.hpp" />
+    <ClInclude Include="src\amd_temp.hpp" />
+    <ClInclude Include="src\lang.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
