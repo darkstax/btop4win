@@ -1,3 +1,20 @@
+## v1.0.7 (darkstax fork)
+
+* Added: AMD ADL PMLOG direct CPU temperature reading (sensor 504)
+* Added: HWiNFO shared memory as universal fallback temperature source
+* Added: CPUID vendor detection for automatic temp source priority
+* Changed: AMD uses ADL first, Intel uses PawnIO/MSR first
+* Changed: UAC level from RequireAdministrator to AsInvoker (PawnIO backend)
+* Changed: Updated config/menu help text for PawnIO driver requirement
+* Fixed: ADLPMLogDataOutput struct layout (was reading wrong memory offsets)
+* Fixed: ADL sensor ID (504=CPU, not 500=Edge which is unsupported on APUs)
+* Fixed: AmdTemp::cleanup() now called on exit
+
+## v1.0.6 (darkstax fork)
+
+* Added: Initial AMD ADL temperature module
+* Changed: LibreHardwareMonitor backend to PawnIO
+
 ## v1.0.5
 * Updated: LibreHardwareMonitor to latest version (0.9.4)
 * Added: Better detection of GPU total memory

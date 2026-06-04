@@ -3,10 +3,7 @@
 ![Windows](https://img.shields.io/badge/-Windows-red?logo=windows)
 ![Usage](https://img.shields.io/badge/Usage-System%20resource%20monitor-yellow)
 ![c++20](https://img.shields.io/badge/cpp-c%2B%2B20-green)
-![latest_release](https://img.shields.io/github/v/tag/aristocratos/btop4win?label=release)
-[![Donate](https://img.shields.io/badge/-Donate-yellow?logo=paypal)](https://paypal.me/aristocratos)
-[![Sponsor](https://img.shields.io/badge/-Sponsor-red?logo=github)](https://github.com/sponsors/aristocratos)
-[![Coffee](https://img.shields.io/badge/-Buy%20me%20a%20Coffee-grey?logo=Ko-fi)](https://ko-fi.com/aristocratos)
+![latest_release](https://img.shields.io/github/v/tag/darkstax/btop4win?label=release)
 
 
 
@@ -17,7 +14,6 @@
 * [Description](#description)
 * [Features](#features)
 * [Themes](#themes)
-* [Support and funding](#support-and-funding)
 * [Prerequisites](#prerequisites) (Read this if you are having issues!)
 * [Screenshots](#screenshots)
 * [Keybindings](#help-menu)
@@ -27,6 +23,19 @@
 * [License](#license)
 
 ## News
+
+##### 4 June 2026
+
+Release v1.0.7 (darkstax fork)
+
+Added direct AMD CPU temperature reading via ADL PMLOG sensor 504, bypassing PawnIO/SMU which returns incorrect values on AMD APUs.
+
+* Added: AMD ADL PMLOG direct CPU temp (sensor 504) — preferred over PawnIO on AMD
+* Added: HWiNFO shared memory as universal fallback
+* Added: CPUID vendor detection for automatic temp source priority
+* Changed: AMD uses ADL first, Intel uses PawnIO/MSR first
+* Changed: UAC level from RequireAdministrator to AsInvoker (PawnIO backend)
+* Changed: Updated config/menu help text for PawnIO driver requirement
 
 ##### 12 October 2025
 
@@ -143,14 +152,6 @@ Themes are located in the themes folder in the same location as btop4win.exe.
 
 Let me know if you want to contribute with new themes.
 
-## Support and funding
-
-You can sponsor this project through github, see [my sponsors page](https://github.com/sponsors/aristocratos) for options.
-
-Or donate through [paypal](https://paypal.me/aristocratos) or [ko-fi](https://ko-fi.com/aristocratos).
-
-Any support is greatly appreciated!
-
 ## Prerequisites
 
 For best experience, a terminal with support for:
@@ -200,7 +201,7 @@ Also needs a UTF8 locale and a font that covers:
 
 1. Make sure you have the latest MSVC Runtime Libraries installed: https://aka.ms/vs/17/release/vc_redist.x64.exe
 
-2. Download package of choice from latest [release](https://github.com/aristocratos/btop4win/releases/latest)
+2. Download package of choice from latest [release](https://github.com/darkstax/btop4win/releases/latest)
 
 3. Extract the btop4win folder anywhere and run btop4win.exe.
 
