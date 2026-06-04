@@ -295,29 +295,29 @@ namespace Config {
 
 		for (int x = 0; const auto& preset : ssplit(presets)) {
 			if (++x > 9) {
-				validError = "Too many presets entered!";
+				validError = L->val_too_many_presets;
 				return false;
 			}
 			for (int y = 0; const auto& box : ssplit(preset, ',')) {
 				if (++y > 4) {
-					validError = "Too many boxes entered for preset!";
+					validError = L->val_too_many_boxes;
 					return false;
 				}
 				const auto& vals = ssplit(box, ':');
 				if (vals.size() != 3) {
-					validError = "Malformatted preset in config value presets!";
+					validError = L->val_malformed_preset;
 					return false;
 				}
 				if (not is_in(vals.at(0), "cpu", "mem", "net", "proc")) {
-					validError = "Invalid box name in config value presets!";
+					validError = L->val_invalid_box;
 					return false;
 				}
 				if (not is_in(vals.at(1), "0", "1")) {
-					validError = "Invalid position value in config value presets!";
+					validError = L->val_invalid_pos;
 					return false;
 				}
 				if (not v_contains(valid_graph_symbols_def, vals.at(2))) {
-					validError = "Invalid graph name in config value presets!";
+					validError = L->val_invalid_graph;
 					return false;
 				}
 			}
@@ -367,11 +367,11 @@ namespace Config {
 			i_value = stoi(value);
 		}
 		catch (const std::invalid_argument&) {
-			validError = "Invalid numerical value!";
+			validError = L->val_invalid_num;
 			return false;
 		}
 		catch (const std::out_of_range&) {
-			validError = "Value out of range!";
+			validError = L->val_out_of_range;
 			return false;
 		}
 		catch (const std::exception& e) {
@@ -380,10 +380,10 @@ namespace Config {
 		}
 
 		if (name == "update_ms" and i_value < 100)
-			validError = "Config value update_ms set too low (<100).";
+			validError = L->val_update_ms_low;
 
 		else if (name == "update_ms" and i_value > 86400000)
-			validError = "Config value update_ms set too high (>86400000).";
+			validError = L->val_update_ms_high;
 
 		else
 			return true;
@@ -393,25 +393,25 @@ namespace Config {
 
 	bool stringValid(const string& name, const string& value) {
 		if (name == "log_level" and not v_contains(Logger::log_levels, value))
-			validError = "Invalid log_level: " + value;
+			validError = L->val_invalid_loglevel + value;
 
 		else if (name == "graph_symbol" and not v_contains(valid_graph_symbols, value))
-			validError = "Invalid graph symbol identifier: " + value;
+			validError = L->val_invalid_symbol + value;
 
 		else if (name.starts_with("graph_symbol_") and (value != "default" and not v_contains(valid_graph_symbols, value)))
 			validError = "Invalid graph symbol identifier for" + name + ": " + value;
 
 		else if (name == "shown_boxes" and not value.empty() and not check_boxes(value))
-			validError = "Invalid box name(s) in shown_boxes!";
+			validError = L->val_invalid_boxes;
 
 		else if (name == "presets" and not presetsValid(value))
 			return false;
 
 		else if (name == "proc_sorting" and not v_contains(Proc::sort_vector, value))
-			validError = "Invalid process sorting option!";
+			validError = L->val_invalid_procsort;
 
 		else if (name == "services_sorting" and not v_contains(Proc::sort_vector_service, value))
-			validError = "Invalid services sorting option!";
+			validError = L->val_invalid_svcsort;
 
 		else if (name == "io_graph_speeds") {
 			const auto maps = ssplit(value);
@@ -424,7 +424,7 @@ namespace Config {
 					all_good = false;
 
 				if (not all_good) {
-					validError = "Invalid formatting of io_graph_speeds!";
+					validError = L->val_invalid_io;
 					return false;
 				}
 			}
@@ -596,7 +596,7 @@ namespace Config {
 		Logger::debug("Writing new config file");
 		std::ofstream cwrite(conf_file, std::ios::trunc);
 		if (cwrite.good()) {
-			cwrite << "#? Config file for btop4win v. " << Global::Version;
+			cwrite << L->cfg_header << Global::Version;
 			for (auto [name, description] : descriptions) {
 				cwrite 	<< "\n\n" << (description.empty() ? "" : description + "\n")
 						<< name << " = ";

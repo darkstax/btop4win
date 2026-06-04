@@ -626,7 +626,7 @@ namespace Cpu {
 		}
 
 		//? Cpu meter
-		out += Mv::to(b_y + 1, b_x + 1) + Theme::c("main_fg") + Fx::b + "CPU " + cpu_meter(cpu.cpu_percent.at("total").back())
+		out += Mv::to(b_y + 1, b_x + 1) + Theme::c("main_fg") + Fx::b + L->cpu_label + cpu_meter(cpu.cpu_percent.at("total").back())
 			+ Theme::g("cpu").at(clamp(cpu.cpu_percent.at("total").back(), 0ll, 100ll)) + rjust(to_string(cpu.cpu_percent.at("total").back()), 4) + Theme::c("main_fg") + '%';
 		if (show_temps) {
 			const auto [temp, unit] = celsius_to(cpu.temp.at(0).back(), temp_scale);
@@ -686,7 +686,7 @@ namespace Cpu {
 
 		//? Gpu Stats
 		if (show_gpu and cy < b_height - 2 and cc <= b_columns) {
-			out += Mv::to(b_y + b_height - 2, b_x + 1) + Theme::c("main_fg") + Fx::b + "GPU " + gpu_meter(cpu.cpu_percent.at("gpu").back())
+			out += Mv::to(b_y + b_height - 2, b_x + 1) + Theme::c("main_fg") + Fx::b + L->gpu_label + gpu_meter(cpu.cpu_percent.at("gpu").back())
 				+ Theme::g("cpu").at(clamp(cpu.cpu_percent.at("gpu").back(), 0ll, 100ll)) + rjust(to_string(cpu.cpu_percent.at("gpu").back()), 4) + Theme::c("main_fg") + '%';
 			
 			const auto& temp_color = Theme::g("temp").at(clamp(cpu.gpu_temp.back(), 0ll, 100ll));
@@ -845,7 +845,7 @@ namespace Mem {
 		string up = (graph_height >= 2 ? Mv::l(mem_width - 2) + Mv::u(graph_height - 1) : "");
 		bool big_mem = mem_width > 21;
 
-		out += Mv::to(y + 1, x + 2) + Theme::c("title") + Fx::b + "Total:" + rjust(floating_humanizer(Mem::totalMem), mem_width - 9) + Fx::ub + Theme::c("main_fg");
+		out += Mv::to(y + 1, x + 2) + Theme::c("title") + Fx::b + L->mem_total + rjust(floating_humanizer(Mem::totalMem), mem_width - 9) + Fx::ub + Theme::c("main_fg");
 		vector<string> comb_names = {"used", "available", "cached", "commit"};
 		if (show_gpu) comb_names.insert(comb_names.end(), { "gpu_used" });
 		if (show_swap and has_swap) comb_names.insert(comb_names.end(), { "page_used" });
@@ -962,12 +962,12 @@ namespace Mem {
 						if (++cy > height - 3) break;
 					}
 
-					out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? " Free:" + rjust(to_string(disk.free_percent) + '%', 4) : "F") + ' '
+					out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? L->mem_free + rjust(to_string(disk.free_percent) + '%', 4) : L->mem_free_short) + ' '
 						+ disk_meters_free.at(mount)(disk.free_percent) + rjust(human_free, (big_disk ? 9 : 5));
 					if (++cy > height - 3) break;
 
 					if (cmp_less_equal(disks.size() * 3 + (show_io_stat ? disk_ios : 0), height - 1)) {
-						out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? " Used:" + rjust(to_string(disk.used_percent) + '%', 4) : "U") + ' '
+						out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? " Used:" + rjust(to_string(disk.used_percent) + '%', 4) : L->mem_used_short) + ' '
 							+ disk_meters_used.at(mount)(disk.used_percent) + rjust(human_used, (big_disk ? 9 : 5));
 						cy++;
 						if (cmp_less_equal(disks.size() * 4 + (show_io_stat ? disk_ios : 0), height - 1)) cy++;
@@ -1069,11 +1069,11 @@ namespace Net {
 			out += Mv::to(b_y+1+cy, b_x+1) + Fx::ub + Theme::c("main_fg") + symbol + ' ' + ljust(speed, 10) + (b_width >= 20 ? rjust('(' + speed_bits + ')', 13) : "");
 			cy += (b_height == 5 ? 2 : 1);
 			if (b_height >= 8) {
-				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + "Top: " + rjust('(' + top, (b_width >= 20 ? 17 : 9)) + ')';
+				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + L->net_top + rjust('(' + top, (b_width >= 20 ? 17 : 9)) + ')';
 				cy++;
 			}
 			if (b_height >= 6) {
-				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + "Total: " + rjust(total, (b_width >= 20 ? 16 : 8));
+				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + L->net_total + rjust(total, (b_width >= 20 ? 16 : 8));
 				cy += (b_height > 6 and b_height % 2 ? 2 : 1);
 			}
 		}
@@ -1238,7 +1238,7 @@ namespace Proc {
 
 				const string& t_color = ((not services and not alive) or selected > 0 ? Theme::c("inactive_fg") : Theme::c("title"));
 				const string& hi_color = ((not services and not alive) or selected > 0 ? t_color : Theme::c("hi_fg"));
-				const string hide = (selected > 0 ? t_color + "hide " : Theme::c("title") + "hide " + Theme::c("hi_fg"));
+				const string hide = (selected > 0 ? t_color + L->btn_hide : Theme::c("title") + "hide " + Theme::c("hi_fg"));
 				int mouse_x = d_x + 2;
 				out += Mv::to(d_y, d_x + 1);
 				if (services) {
@@ -1289,13 +1289,13 @@ namespace Proc {
 				const int item_fit = floor((double)(d_width - 2) / 10);
 				const int item_width = floor((double)(d_width - 2) / min(item_fit, 7));
 				out += Mv::to(d_y + 1, d_x + 1) + Fx::b + Theme::c("title")
-										+ cjust("Status:", item_width)
-										+ cjust("Elapsed:", item_width);
-				if (item_fit >= 3) out += cjust("IO/R:", item_width);
-				if (item_fit >= 4) out += cjust("IO/W:", item_width);
-				if (item_fit >= 5) out += cjust((services ? "Start:" : "Parent :"), item_width);
-				if (item_fit >= 6) out += cjust((services ? "Owner:" : "User:"), item_width);
-				if (item_fit >= 7) out += cjust("Threads:", item_width);
+										+ cjust(L->proc_status, item_width)
+										+ cjust(L->proc_elapsed, item_width);
+				if (item_fit >= 3) out += cjust(L->proc_ior, item_width);
+				if (item_fit >= 4) out += cjust(L->proc_iow, item_width);
+				if (item_fit >= 5) out += cjust((services ? L->proc_start : L->proc_parent), item_width);
+				if (item_fit >= 6) out += cjust((services ? L->proc_owner : L->proc_user), item_width);
+				if (item_fit >= 7) out += cjust(L->proc_threads, item_width);
 				//if (item_fit >= 8) out += cjust("Nice:", item_width);
 
 
@@ -1363,8 +1363,8 @@ namespace Proc {
 			const string t_color = (selected == 0 ? Theme::c("inactive_fg") : Theme::c("title"));
 			const string hi_color = (selected == 0 ? Theme::c("inactive_fg") : Theme::c("hi_fg"));
 			int mouse_x = x + 14;
-			out += Mv::to(y + height - 1, x + 1) + title_left_down + Fx::b + hi_color + Symbols::up + Theme::c("title") + " select " + down_button + Fx::ub + title_right_down
-				+ title_left_down + Fx::b + t_color + "info " + hi_color + Symbols::enter + Fx::ub + title_right_down;
+			out += Mv::to(y + height - 1, x + 1) + title_left_down + Fx::b + hi_color + Symbols::up + Theme::c("title") + L->btn_select + down_button + Fx::ub + title_right_down
+				+ title_left_down + Fx::b + t_color + L->btn_info + hi_color + Symbols::enter + Fx::ub + title_right_down;
 				if (selected > 0) Input::mouse_mappings["enter"] = {y + height - 1, mouse_x, 1, 6};
 				mouse_x += 8;
 			
@@ -1390,17 +1390,17 @@ namespace Proc {
 			//? Labels for fields in list
 			if (not proc_tree)
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
-					+ (is_in(sorting, "pid", "service") ? Fx::ul : "") + rjust((services ? "Service:" : "Pid:"), 8) + (services ? "" : Fx::uul) + ' '
-					+ (is_in(sorting, "name", "service") ? Fx::ul : "") + ljust((services ? "" : "Program:"), prog_size) + Fx::uul + ' '
-					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + ljust((services ? "Caption:" : "Command:"), cmd_size) + Fx::uul : "") + ' ';
+					+ (is_in(sorting, "pid", "service") ? Fx::ul : "") + rjust((services ? L->proc_service : L->proc_pid), 8) + (services ? "" : Fx::uul) + ' '
+					+ (is_in(sorting, "name", "service") ? Fx::ul : "") + ljust((services ? "" : L->proc_program), prog_size) + Fx::uul + ' '
+					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + ljust((services ? L->proc_caption : L->proc_command), cmd_size) + Fx::uul : "") + ' ';
 			else
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
-					+ (is_in(sorting, "pid", "name", "command") ? Fx::ul : "") + ljust("Tree:", tree_size) + Fx::uul + ' ';
+					+ (is_in(sorting, "pid", "name", "command") ? Fx::ul : "") + ljust(L->proc_tree, tree_size) + Fx::uul + ' ';
 
-			out += (thread_size > 0 ? Mv::l(4) + (sorting == "threads" ? Fx::ul : "") + "Threads: " + Fx::uul : "")
-					+ (is_in(sorting, "user", "status") ? Fx::ul : "") + ljust((services ? "Status:" : "User:"), user_size) + Fx::uul + ' '
-					+ (sorting == "memory" ? Fx::ul : "") + rjust((mem_bytes ? "MemB" : "Mem%"), 5) + Fx::uul + ' '
-					+ (sorting.starts_with("cpu") ? Fx::ul : "") + rjust("Cpu%", 10) + Fx::uul + Fx::ub;
+			out += (thread_size > 0 ? Mv::l(4) + (sorting == "threads" ? Fx::ul : "") + L->proc_threads + Fx::uul : "")
+					+ (is_in(sorting, "user", "status") ? Fx::ul : "") + ljust((services ? L->proc_status : L->proc_user), user_size) + Fx::uul + ' '
+					+ (sorting == "memory" ? Fx::ul : "") + rjust((mem_bytes ? L->proc_memb : L->proc_mem_pct), 5) + Fx::uul + ' '
+					+ (sorting.starts_with("cpu") ? Fx::ul : "") + rjust(L->proc_cpu_pct, 10) + Fx::uul + Fx::ub;
 		}
 		//* End of redraw block
 
@@ -1436,7 +1436,7 @@ namespace Proc {
 			const double mem_p = detailed.mem_percent;
 			string mem_str = to_string(mem_p);
 			mem_str.resize((mem_p < 10 or mem_p >= 100 ? 3 : 4));
-			out += Mv::to(d_y + 4, d_x + 1) + Theme::c("title") + Fx::b + rjust((item_fit > 4 ? "Memory: " : "M:") + mem_str + "% ", (d_width / 3) - 2)
+			out += Mv::to(d_y + 4, d_x + 1) + Theme::c("title") + Fx::b + rjust((item_fit > 4 ? L->proc_memory : L->proc_memory_short) + mem_str + "% ", (d_width / 3) - 2)
 				+ Theme::c("inactive_fg") + Fx::ub + graph_bg * (d_width / 3) + Mv::l(d_width / 3)
 				+ Theme::c("proc_misc") + detailed_mem_graph(detailed.mem_bytes, (redraw or data_same or not alive)) + ' '
 				+ Theme::c("title") + Fx::b + detailed.memory;
@@ -1684,7 +1684,7 @@ namespace Draw {
 			b_x = x + width - b_width - 1;
 			b_y = y + ceil((double)(height - 2) / 2) - ceil((double)b_height / 2) + 1;
 
-			box = createBox(x, y, width, height, Theme::c("cpu_box"), true, (cpu_bottom ? "" : "cpu"), (cpu_bottom ? "cpu" : ""), 1);
+			box = createBox(x, y, width, height, Theme::c("cpu_box"), true, (cpu_bottom ? "" : L->box_cpu), (cpu_bottom ? L->box_cpu : ""), 1);
 
 			auto& custom = Config::getS("custom_cpu_name");
 			const string cpu_title = uresize((custom.empty() ? Cpu::cpuName : custom) , b_width - 14);
@@ -1739,7 +1739,7 @@ namespace Draw {
 				if (disks_width < 25) disk_meter += 14;
 			}
 
-			box = createBox(x, y, width, height, Theme::c("mem_box"), true, "mem", "", 2);
+			box = createBox(x, y, width, height, Theme::c("mem_box"), true, L->box_mem, "", 2);
 			box += Mv::to(y, (show_disks ? divider + 2 : x + width - 9)) + Theme::c("mem_box") + Symbols::title_left + (show_disks ? Fx::b : "")
 				+ Theme::c("hi_fg") + 'd' + Theme::c("title") + "isks" + Fx::ub + Theme::c("mem_box") + Symbols::title_right;
 			Input::mouse_mappings["d"] = {y, (show_disks ? divider + 3 : x + width - 8), 1, 5};
@@ -1768,8 +1768,8 @@ namespace Draw {
 			d_graph_height = round((double)(height - 2) / 2);
 			u_graph_height = height - 2 - d_graph_height;
 
-			box = createBox(x, y, width, height, Theme::c("net_box"), true, "net", "", 3);
-			box += createBox(b_x, b_y, b_width, b_height, "", false, "download", "upload");
+			box = createBox(x, y, width, height, Theme::c("net_box"), true, L->box_net, "", 3);
+			box += createBox(b_x, b_y, b_width, b_height, "", false, L->box_download, L->box_upload);
 		}
 
 		//* Calculate and draw proc box outlines
@@ -1780,7 +1780,7 @@ namespace Draw {
 			x = proc_left ? 1 : Term::width - width + 1;
 			y = (cpu_bottom and Cpu::shown or not cpu_wide) ? 1 : Cpu::height + 1;
 			select_max = height - 3;
-			box = createBox(x, y, width, height, Theme::c("proc_box"), true, "proc", "", 4);
+			box = createBox(x, y, width, height, Theme::c("proc_box"), true, L->box_proc, "", 4);
 		}
 	}
 }

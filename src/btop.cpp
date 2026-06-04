@@ -103,7 +103,7 @@ void argumentParser(const int& argc, char **argv) {
 			exit(0);
 		}
 		else if (is_in(argument, "-v", "--version")) {
-			cout << "btop4win version: " << Global::Version << endl;
+			cout << L->cli_version << Global::Version << endl;
 			exit(0);
 		}
 		else if (is_in(argument, "-lc", "--low-color")) {
@@ -119,22 +119,22 @@ void argumentParser(const int& argc, char **argv) {
 		}
 		else if (is_in(argument, "-p", "--preset")) {
 			if (++i >= argc) {
-				cout << "ERROR: Preset option needs an argument." << endl;
+				cout << L->cli_preset_err << endl;
 				exit(1);
 			}
 			else if (const string val = argv[i]; isint(val) and val.size() == 1) {
 				Global::arg_preset = std::clamp(stoi(val), 0, 9);
 			}
 			else {
-				cout << "ERROR: Preset option only accepts an integer value between 0-9." << endl;
+				cout << L->cli_preset_range << endl;
 				exit(1);
 			}
 		}
 		else if (argument == "--debug")
 			Global::debug = true;
 		else {
-			cout << " Unknown argument: " << argument << "\n" <<
-			" Use -h or --help for help." <<  endl;
+			cout << L->cli_unknown_arg << argument << "\n" <<
+			L->cli_use_help <<  endl;
 			exit(1);
 		}
 	}
@@ -167,12 +167,12 @@ void term_resize(bool force) {
 		sleep_ms(100);
 		if (Term::width < min_size.at(0) or Term::height < min_size.at(1)) {
 			cout << Term::clear << Global::bg_black << Global::fg_white << Mv::to((Term::height / 2) - 2, (Term::width / 2) - 11)
-				 << "Terminal size too small:" << Mv::to((Term::height / 2) - 1, (Term::width / 2) - 10)
-				 << " Width = " << (Term::width < min_size.at(1) ? Global::fg_red : Global::fg_green) << Term::width
-				 << Global::fg_white << " Height = " << (Term::height < min_size.at(0) ? Global::fg_red : Global::fg_green) << Term::height
+				 << L->term_too_small << Mv::to((Term::height / 2) - 1, (Term::width / 2) - 10)
+				 << L->term_width << (Term::width < min_size.at(1) ? Global::fg_red : Global::fg_green) << Term::width
+				 << Global::fg_white << L->term_height << (Term::height < min_size.at(0) ? Global::fg_red : Global::fg_green) << Term::height
 				 << Mv::to((Term::height / 2) + 1, (Term::width / 2) - 12) << Global::fg_white
-				 << "Needed for current config:" << Mv::to((Term::height / 2) + 2, (Term::width / 2) - 10)
-				 << "Width = " << min_size.at(0) << " Height = " << min_size.at(1) << flush;
+				 << L->term_needed << Mv::to((Term::height / 2) + 2, (Term::width / 2) - 10)
+				 << "Width = " << min_size.at(0) << L->term_height << min_size.at(1) << flush;
 			bool got_key = false;
 			for (; not Term::refresh() and not got_key; got_key = Input::poll(10));
 			if (got_key) {
@@ -213,7 +213,7 @@ void clean_quit(int sig) {
 		std::cerr << Global::fg_red << "ERROR: " << Global::fg_white << Global::exit_error_msg << Fx::reset << endl;
 	}
 	AmdTemp::cleanup();
-	Logger::info("Quitting! Runtime: " + sec_to_dhms(time_s() - Global::start_time));
+	Logger::info(string(L->cli_version) + " - Runtime: " + sec_to_dhms(time_s() - Global::start_time));
 
 	const auto excode = (sig != -1 ? sig : 0);
 
@@ -434,13 +434,13 @@ namespace Runner {
 					const int x = Term::width / 2 - 10, y = Term::height / 2 - 10;
 					output += Term::clear;
 					empty_bg += Draw::banner_gen(y, 0, true)
-						+ Mv::to(y+6, x) + Theme::c("title") + Fx::b + "No boxes shown!"
-						+ Mv::to(y+8, x) + Theme::c("hi_fg") + "1" + Theme::c("main_fg") + " | Show CPU box"
-						+ Mv::to(y+9, x) + Theme::c("hi_fg") + "2" + Theme::c("main_fg") + " | Show MEM box"
-						+ Mv::to(y+10, x) + Theme::c("hi_fg") + "3" + Theme::c("main_fg") + " | Show NET box"
-						+ Mv::to(y+11, x) + Theme::c("hi_fg") + "4" + Theme::c("main_fg") + " | Show PROC box"
-						+ Mv::to(y+12, x-2) + Theme::c("hi_fg") + "esc" + Theme::c("main_fg") + " | Show menu"
-						+ Mv::to(y+13, x) + Theme::c("hi_fg") + "q" + Theme::c("main_fg") + " | Quit";
+						+ Mv::to(y+6, x) + Theme::c("title") + Fx::b + L->no_boxes
+						+ Mv::to(y+8, x) + Theme::c("hi_fg") + "1" + Theme::c("main_fg") + " | " + string(L->show_cpu_box)
+						+ Mv::to(y+9, x) + Theme::c("hi_fg") + "2" + Theme::c("main_fg") + " | " + string(L->show_mem_box)
+						+ Mv::to(y+10, x) + Theme::c("hi_fg") + "3" + Theme::c("main_fg") + " | " + string(L->show_net_box)
+						+ Mv::to(y+11, x) + Theme::c("hi_fg") + "4" + Theme::c("main_fg") + " | " + string(L->show_proc_box)
+						+ Mv::to(y+12, x-2) + Theme::c("hi_fg") + "esc" + Theme::c("main_fg") + " | " + string(L->show_menu)
+						+ Mv::to(y+13, x) + Theme::c("hi_fg") + "q" + Theme::c("main_fg") + " | " + string(L->quit);
 				}
 				output += empty_bg;
 			}

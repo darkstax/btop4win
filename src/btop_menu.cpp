@@ -171,12 +171,12 @@ namespace Menu {
 		int pos = width / 2 - (boxtype == 0 ? 6 : 14);
 		auto& first_color = (selected == 0 ? Theme::c("hi_fg") : Theme::c("div_line"));
 		out = Mv::d(1) + Mv::r(pos) + Fx::b + first_color + button_left + (selected == 0 ? Theme::c("title") : Theme::c("main_fg") + Fx::ub)
-			+ (boxtype == 0 ? "    Ok    " : "    Yes    ") + first_color + button_right;
+			+ (boxtype == 0 ? L->btn_ok : L->btn_yes) + first_color + button_right;
 		mouse_mappings["button1"] = Input::Mouse_loc{y + height - 4, x + pos + 1, 3, 12 + (boxtype > 0 ? 1 : 0)};
 		if (boxtype > 0) {
 			auto& second_color = (selected == 1 ? Theme::c("hi_fg") : Theme::c("div_line"));
 			out += Mv::r(2) + second_color + button_left + (selected == 1 ? Theme::c("title") : Theme::c("main_fg") + Fx::ub)
-				+ "    No    " + second_color + button_right;
+				+ L->btn_no + second_color + button_right;
 			mouse_mappings["button2"] = Input::Mouse_loc{y + height - 4, x + pos + 15 + (boxtype > 0 ? 1 : 0), 3, 12};
 		}
 		return box_contents + out + Fx::reset;
@@ -238,7 +238,7 @@ namespace Menu {
 		auto& p_name = Proc::detailed.entry.name;
 		static string selected_signal = "";
 		static int x = 0, y = 0, i_sel = 0;
-		static const vector<string> start_index = { "Auto", "Manual", "Disabled", "System", "Boot" };
+		static const vector<string> start_index = { L->svc_auto, L->svc_manual, L->svc_disabled, "System", "Boot" };
 		if (bg.empty()) selected_signal = Proc::detailed.start;
 		i_sel = v_index(start_index, selected_signal);
 		bool driver = (i_sel > 2 or Proc::detailed.service_type.ends_with("Driver"));
@@ -249,7 +249,7 @@ namespace Menu {
 			x = Term::width/2 - 40;
 			y = Term::height/2 - 9;
 			bg = Draw::createBox(x + 2, y, 78, 16, Theme::c("hi_fg"), true, "start-type");
-			bg += Mv::to(y+2, x+3) + Theme::c("title") + Fx::b + cjust("Set start-type for " + uresize(p_name, 30), 76);
+			bg += Mv::to(y+2, x+3) + Theme::c("title") + Fx::b + cjust(L->dlg_set_starttype + uresize(p_name, 30), 76);
 		}
 		else if (is_in(key, "escape", "q")) {
 			return Closed;
@@ -320,9 +320,9 @@ namespace Menu {
 	int sizeError(const string& key) {
 		if (redraw) {
 			vector<string> cont_vec;
-			cont_vec.push_back(Fx::b + Theme::g("used")[100] + "Error:" + Theme::c("main_fg") + Fx::ub);
+			cont_vec.push_back(Fx::b + Theme::g("used")[100] + L->dlg_error + Theme::c("main_fg") + Fx::ub);
 			cont_vec.push_back("Terminal size to small to" + Fx::reset);
-			cont_vec.push_back("display menu or box!" + Fx::reset);
+			cont_vec.push_back(L->dlg_display_menu + Fx::reset);
 
 			messageBox = Menu::msgBox{45, 0, cont_vec, "error"};
 			Global::overlay = messageBox();
@@ -357,7 +357,7 @@ namespace Menu {
 			}
 			else {
 				cont_vec = {
-					Fx::b + Theme::c("main_fg") + "Terminate PID: " + Fx::ub + Theme::c("hi_fg") + to_string(s_pid) + Theme::c("main_fg") + " ("
+					Fx::b + Theme::c("main_fg") + L->dlg_terminate_pid + Fx::ub + Theme::c("hi_fg") + to_string(s_pid) + Theme::c("main_fg") + " ("
 					+ uresize(p_name, 16) + ')' + Fx::reset,
 				};
 				messageBox = Menu::msgBox{ 50, 1, cont_vec, "terminate" };
@@ -401,18 +401,18 @@ namespace Menu {
 	int signalReturn(const string& key) {
 		if (redraw) {
 			vector<string> cont_vec;
-			cont_vec.push_back(Fx::b + Theme::g("used")[100] + "Failure:" + Theme::c("main_fg") + Fx::ub);
+			cont_vec.push_back(Fx::b + Theme::g("used")[100] + L->dlg_failure + Theme::c("main_fg") + Fx::ub);
 			if (signalKillRet == ERROR_ACCESS_DENIED) {
-				cont_vec.push_back("Access denied!" + Fx::reset);
+				cont_vec.push_back(L->err_access_denied + Fx::reset);
 			}
 			else if (signalKillRet == ERROR_INVALID_HANDLE) {
-				cont_vec.push_back("Could not get handle to process or service!" + Fx::reset);
+				cont_vec.push_back(L->err_no_handle + Fx::reset);
 			}
 			else if (signalKillRet == ERROR_INVALID_FUNCTION) {
-				cont_vec.push_back("Something went wrong, check logfile for more info!" + Fx::reset);
+				cont_vec.push_back(L->err_something_wrong + Fx::reset);
 			}
 			else if (signalKillRet == ERROR_INVALID_SERVICE_CONTROL) {
-				cont_vec.push_back("Requested action is not valid for this service!" + Fx::reset);
+				cont_vec.push_back(L->err_invalid_service + Fx::reset);
 			}
 			else {
 				cont_vec.push_back("Unknown error! (errno: " + to_string(signalKillRet) + ')' + Fx::reset);
@@ -915,7 +915,7 @@ namespace Menu {
 					+ to_string(page+1) + '/' + to_string(pages) + ' ' + Theme::c("hi_fg") + Symbols::down + Fx::ub + Symbols::title_right_down;
 			}
 			auto cy = y+7;
-			out += Mv::to(cy++, x + 1) + Theme::c("title") + Fx::b + cjust("Key:", 20) + "Description:";
+			out += Mv::to(cy++, x + 1) + Theme::c("title") + Fx::b + cjust(L->help_key, 20) + "Description:";
 			for (int c = 0, i = max(0, (height - 3) * page); c++ < height - 3 and i < (int)get_help_text().size(); i++) {
 				out += Mv::to(cy++, x + 1) + Theme::c("hi_fg") + Fx::b + cjust(get_help_text()[i][0], 20)
 					+ Theme::c("main_fg") + Fx::ub + get_help_text()[i][1];
