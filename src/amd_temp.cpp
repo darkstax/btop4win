@@ -16,10 +16,9 @@ constexpr int ADL_PMLOG_MAX_SENSORS = 256;
 
 // ADL PMLOG sensor IDs (from adl_sdk.h)
 constexpr int ADL_PMLOG_TEMPERATURE_EDGE    = 500;
-constexpr int ADL_PMLOG_TEMPERATURE_MEM     = 501;
-constexpr int ADL_PMLOG_TEMPERATURE_VRVDDC  = 502;
 constexpr int ADL_PMLOG_TEMPERATURE_SOC     = 503;
 constexpr int ADL_PMLOG_TEMPERATURE_CPU     = 504;
+constexpr int ADL_PMLOG_TEMPERATURE_VRVDDC  = 502;
 
 struct ADLPMLogDataOutput {
 	int size;
@@ -31,7 +30,7 @@ struct ADLPMLogDataOutput {
 // HWiNFO shared memory (fallback)
 #define HWINFO_MAP_NAME   "Global\\HWiNFO_SENS_SM2"
 #define HWINFO_STR_LEN    128
-#define HWINFO_SIGNATURE  0x53695748  // "HWiS"
+#define HWINFO_SIGNATURE  0x53695748
 #define HWINFO_TYPE_TEMP  1
 
 #pragma pack(push, 1)
@@ -42,10 +41,7 @@ struct HWiNFOReading {
 	char szLabelOrig[HWINFO_STR_LEN];
 	char szLabelUser[HWINFO_STR_LEN];
 	char szUnit[16];
-	double Value;
-	double ValueMin;
-	double ValueMax;
-	double ValueAvg;
+	double Value, ValueMin, ValueMax, ValueAvg;
 };
 #pragma pack(pop)
 
@@ -56,7 +52,7 @@ typedef int (__stdcall* ADL_DESTROY)();
 typedef int (__stdcall* ADL_ADAPTER_COUNT)(int*);
 typedef int (__stdcall* ADL2_PMLOG)(int, int, ADLPMLogDataOutput*);
 
-// State
+// ADL state
 HMODULE hADL = nullptr;
 ADL_DESTROY pfnDestroy = nullptr;
 ADL_ADAPTER_COUNT pfnAdapters = nullptr;
@@ -64,6 +60,7 @@ ADL2_PMLOG pfnPmlog = nullptr;
 bool adlOk = false;
 int adlAdapter = 0;
 
+// HWiNFO state
 HANDLE hHWMap = nullptr;
 void* pHWMem = nullptr;
 bool hwOk = false;
@@ -75,19 +72,8 @@ void* __stdcall ADL_Malloc(int size) {
 void adlCleanup() {
 	if (pfnDestroy) pfnDestroy();
 	if (hADL) { FreeLibrary(hADL); hADL = nullptr; }
-	pfnDestroy = nullptr;
-	pfnAdapters = nullptr;
-	pfnPmlog = nullptr;
-	adlOk = false;
+	pfnDestroy = nullptr; pfnAdapters = nullptr; pfnPmlog = nullptr; adlOk = false;
 }
-
-void hwCleanup() {
-	if (pHWMem) { UnmapViewOfFile(pHWMem); pHWMem = nullptr; }
-	if (hHWMap) { CloseHandle(hHWMap); hHWMap = nullptr; }
-	hwOk = false;
-}
-
-// ---- ADL ----
 
 bool adlInit() {
 	hADL = LoadLibraryW(L"atiadlxx.dll");
@@ -104,16 +90,13 @@ bool adlInit() {
 	int count = 0;
 	if (pfnAdapters(&count) != ADL_OK || count <= 0) { adlCleanup(); return false; }
 
-	// Probe each adapter for CPU temp sensor (504)
 	ADLPMLogDataOutput probe{};
 	probe.size = sizeof(ADLPMLogDataOutput);
 	probe.version = 1;
 
 	for (int i = 0; i < count; i++) {
 		if (pfnPmlog(0, i, &probe) == ADL_OK && probe.supported[ADL_PMLOG_TEMPERATURE_CPU]) {
-			adlAdapter = i;
-			adlOk = true;
-			return true;
+			adlAdapter = i; adlOk = true; return true;
 		}
 	}
 	adlCleanup();
@@ -128,13 +111,8 @@ int adlReadTemp() {
 	data.version = 1;
 	if (pfnPmlog(0, adlAdapter, &data) != ADL_OK) return -1;
 
-	// Priority: CPU(504) > SOC(503) > EDGE(500) > GFX/VRVDDC(502)
-	const int ids[] = {
-		ADL_PMLOG_TEMPERATURE_CPU,
-		ADL_PMLOG_TEMPERATURE_SOC,
-		ADL_PMLOG_TEMPERATURE_EDGE,
-		ADL_PMLOG_TEMPERATURE_VRVDDC,
-	};
+	const int ids[] = {ADL_PMLOG_TEMPERATURE_CPU, ADL_PMLOG_TEMPERATURE_SOC,
+		ADL_PMLOG_TEMPERATURE_EDGE, ADL_PMLOG_TEMPERATURE_VRVDDC};
 	for (int j = 0; j < 4; j++) {
 		int id = ids[j];
 		if (data.supported[id]) {
@@ -145,16 +123,18 @@ int adlReadTemp() {
 	return -1;
 }
 
-// ---- HWiNFO fallback ----
+void hwCleanup() {
+	if (pHWMem) { UnmapViewOfFile(pHWMem); pHWMem = nullptr; }
+	if (hHWMap) { CloseHandle(hHWMap); hHWMap = nullptr; }
+	hwOk = false;
+}
 
 bool hwInit() {
 	hHWMap = OpenFileMappingA(FILE_MAP_READ, FALSE, HWINFO_MAP_NAME);
 	if (!hHWMap) return false;
 	pHWMem = MapViewOfFile(hHWMap, FILE_MAP_READ, 0, 0, 0);
 	if (!pHWMem) { CloseHandle(hHWMap); hHWMap = nullptr; return false; }
-	if (*(unsigned long*)pHWMem != HWINFO_SIGNATURE) {
-		hwCleanup(); return false;
-	}
+	if (*(unsigned long*)pHWMem != HWINFO_SIGNATURE) { hwCleanup(); return false; }
 	hwOk = true;
 	return true;
 }
@@ -176,7 +156,6 @@ int hwReadTemp() {
 			strstr(r->szLabelOrig, "CPU Tctl"))
 			return (int)(r->Value + 0.5);
 	}
-	// Any CPU temp
 	for (unsigned long i = 0; i < n; i++) {
 		auto* r = (HWiNFOReading*)(base + off + sz * i);
 		if (r->tReading != HWINFO_TYPE_TEMP || r->Value <= 0) continue;

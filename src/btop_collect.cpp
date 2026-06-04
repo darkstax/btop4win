@@ -54,6 +54,7 @@ tab-size = 4
 #pragma comment(lib, "iphlpapi.lib")
 #include <powerbase.h>
 #pragma comment(lib, "PowrProf.lib")
+#include <intrin.h>
 
 #define LODWORD(_qw)    ((DWORD)(_qw))
 #define HIDWORD(_qw)    ((DWORD)(((_qw) >> 32) & 0xffffffff))
@@ -189,6 +190,7 @@ namespace Cpu {
 	bool got_sensors = false, cpu_temp_only = false;
 	string gpu_name;
 	bool has_gpu = false;
+	bool isAmd = false;  // set at init, controls temp priority
 	atomic<uint64_t> OHMRTimer = 0;
 	bool has_OHMR = true;
 	std::mutex OHMRmutex;
@@ -1019,7 +1021,19 @@ namespace Shared {
 
 		clkTck = 100;
 
-		//? Always try to init AMD ADL first — preferred temp source on AMD systems
+		//? Detect CPU vendor for temperature source priority
+		{
+			int regs[4] = {};
+			__cpuid(regs, 0);
+			char vendor[13] = {};
+			*(int*)(vendor + 0) = regs[1];
+			*(int*)(vendor + 4) = regs[3];
+			*(int*)(vendor + 8) = regs[2];
+			Cpu::isAmd = (strcmp(vendor, "AuthenticAMD") == 0);
+		}
+
+		//? AMD: init ADL for direct temp reading (preferred over PawnIO on AMD)
+		//? Intel: init HWiNFO fallback (PawnIO handles primary via LHM)
 		AmdTemp::init();
 
 	#ifdef LHM_Enabled
@@ -1251,9 +1265,13 @@ namespace Cpu {
 				cpuHz = to_string((int)round(hz)) + " MHz";
 
 			if (got_sensors) {
-				//? Prefer AMD ADL over LHM/PawnIO for CPU package temp
-				int cpu_pkg_temp = AmdTemp::readCpuTemp();
-				if (cpu_pkg_temp <= 0) {
+				int cpu_pkg_temp;
+				if (isAmd) {
+					//? AMD: ADL (sensor 504) preferred, PawnIO as fallback
+					cpu_pkg_temp = AmdTemp::readCpuTemp();
+					if (cpu_pkg_temp <= 0) cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+				} else {
+					//? Intel: PawnIO/MSR preferred, no ADL available
 					cpu_pkg_temp = OHMRrawStats.CPU.at(0);
 				}
 				current_cpu.temp.at(0).push_back(cpu_pkg_temp);
