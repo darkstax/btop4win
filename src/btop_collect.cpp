@@ -439,9 +439,13 @@ namespace Cpu {
 					cpu_temps.insert(cpu_temps.begin(), mb_system);
 			}
 			//? If package temp is 0 (e.g. PawnIO MSR/SMU returned no valid reading),
-			//? fall back to motherboard sensor or core temp average
+			//? prefer AMD ADL, then fall back to motherboard/core average/GPU
 			else if (not cpu_temps.empty() and cpu_temps.front() == 0) {
-				if (mb_cpu > 0) {
+				int adl_temp = AmdTemp::readCpuTemp();
+				if (adl_temp > 0) {
+					cpu_temps.front() = adl_temp;
+				}
+				else if (mb_cpu > 0) {
 					cpu_temps.front() = mb_cpu;
 				}
 				else if (cpu_temps.size() > 1) {
@@ -1015,6 +1019,9 @@ namespace Shared {
 
 		clkTck = 100;
 
+		//? Always try to init AMD ADL first — preferred temp source on AMD systems
+		AmdTemp::init();
+
 	#ifdef LHM_Enabled
 		init_status("Libre Hardware Monitor Init");
 		//? Start up background thread for Libre Hardware Monitor
@@ -1027,8 +1034,6 @@ namespace Shared {
 		}
 	#else
 		Cpu::has_OHMR = false;
-		//? No LHM — try ADL for at least CPU package temp
-		AmdTemp::init();
 	#endif
 
 		init_status("CPU Init");
@@ -1246,14 +1251,10 @@ namespace Cpu {
 				cpuHz = to_string((int)round(hz)) + " MHz";
 
 			if (got_sensors) {
-				int cpu_pkg_temp = OHMRrawStats.CPU.at(0);
-				//? If LHM/PawnIO gives 0 for CPU package temp (AMD SMU not supported),
-				//? try reading directly from AMD ADL driver
-				if (cpu_pkg_temp == 0) {
-					static bool adl_initialized = false;
-					if (not adl_initialized) { AmdTemp::init(); adl_initialized = true; }
-					int adl_temp = AmdTemp::readCpuTemp();
-					if (adl_temp > 0) cpu_pkg_temp = adl_temp;
+				//? Prefer AMD ADL over LHM/PawnIO for CPU package temp
+				int cpu_pkg_temp = AmdTemp::readCpuTemp();
+				if (cpu_pkg_temp <= 0) {
+					cpu_pkg_temp = OHMRrawStats.CPU.at(0);
 				}
 				current_cpu.temp.at(0).push_back(cpu_pkg_temp);
 				if (current_cpu.temp.at(0).size() > 20) current_cpu.temp.at(0).pop_front();
