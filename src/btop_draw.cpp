@@ -598,7 +598,7 @@ namespace Cpu {
 				bat_pos = current_pos;
 				bat_len = current_len;
 
-				out += Mv::to(y, bat_pos) + title_left + Theme::c("title") + Fx::b + "BAT" + bat_symbol + ' ' + str_percent
+				out += Mv::to(y, bat_pos) + title_left + Theme::c("title") + Fx::b + L->bat + bat_symbol + ' ' + str_percent
 					+ (Term::width >= 100 ? Fx::ub + ' ' + bat_meter(percent) + Fx::b : "")
 					+ (not str_time.empty() ? ' ' + Theme::c("title") + str_time : " ") + Fx::ub + title_right;
 			}
@@ -622,7 +622,7 @@ namespace Cpu {
 				upstr = trans(upstr);
 			}
 			out += Mv::to(y + (single_graph or not Config::getB("cpu_invert_lower") ? 1 : height - 2), x + 2)
-				+ Theme::c("graph_text") + "up" + Mv::r(1) + upstr;
+				+ Theme::c("graph_text") + L->up_prefix + Mv::r(1) + upstr;
 		}
 
 		//? Cpu meter
@@ -674,8 +674,8 @@ namespace Cpu {
 		if (cy < b_height - 2 and cc <= b_columns) {
 			string lavg_pre;
 			int sep = 1;
-			if (b_column_size == 2) { lavg_pre = "Load AVG:"; sep = 3; }
-			else if (b_column_size == 1) { lavg_pre = "LAV:"; }
+			if (b_column_size == 2) { lavg_pre = L->load_avg; sep = 3; }
+			else if (b_column_size == 1) { lavg_pre = L->lav; }
 			string lavg;
 			for (const auto& val : cpu.load_avg) {
 				lavg += string(sep, ' ') + (lavg_pre.size() < 3 ? to_string((int)round(val)) : to_string(val).substr(0, 4));
@@ -858,10 +858,10 @@ namespace Mem {
 					if (graph_height > 0) out += Mv::to(y + 1 + cy, x + 1 + cx) + divider;
 					cy += 1;
 				}
-				out += Mv::to(y + 1 + cy, x + 1 + cx) + Theme::c("title") + Fx::b + (mem.pagevirt ? "Page+Virt:" : "Pagefiles:")
+				out += Mv::to(y + 1 + cy, x + 1 + cx) + Theme::c("title") + Fx::b + (mem.pagevirt ? L->mem_pagevirt : L->mem_pagefiles)
 					+ rjust(floating_humanizer(mem.stats.at("page_total")), mem_width - 13) + Theme::c("main_fg") + Fx::ub;
 				cy += 1;
-				title = "Used";
+				title = L->mem_used;
 			}
 			else if (name == "gpu_used") {
 				if (cy > height - 5) break;
@@ -872,7 +872,7 @@ namespace Mem {
 				out += Mv::to(y + 1 + cy, x + 1 + cx) + Theme::c("title") + Fx::b + "GPU" + (cpu_gpu ? " Shared" : "") + ":"
 					+ rjust(floating_humanizer(mem.stats.at("gpu_total")), mem_width - 7 - (cpu_gpu ? 7 : 0)) + Theme::c("main_fg") + Fx::ub;
 				cy += 1;
-				title = "Used";
+				title = L->mem_used;
 			}
 			else
 				title = capitalize(name);
@@ -915,21 +915,21 @@ namespace Mem {
 						const string used_percent = to_string(disk.used_percent);
 						out += Mv::to(y+1+cy, x+1+cx + round((double)disks_width / 2) - round((double)used_percent.size() / 2) - 1) + hu_div + used_percent + '%' + hu_div;
 					}
-					out += Mv::to(y+2+cy++, x+1+cx) + (big_disk ? " IO% " : " IO   " + Mv::l(2)) + Theme::c("inactive_fg") + graph_bg * (disks_width - 6)
+					out += Mv::to(y+2+cy++, x+1+cx) + (big_disk ? L->mem_io_pct : L->mem_io + Mv::l(2)) + Theme::c("inactive_fg") + graph_bg * (disks_width - 6)
 						+ Mv::l(disks_width - 6) + io_graphs.at(mount + "_activity")(disk.io_activity, redraw or data_same) + Theme::c("main_fg");
 					if (++cy > height - 3) break;
 					if (io_graph_combined) {
 						auto comb_val = disk.io_read.back() + disk.io_write.back();
 						const string humanized = (disk.io_write.back() > 0 ? "▼"s : ""s) + (disk.io_read.back() > 0 ? "▲"s : ""s)
-												+ (comb_val > 0 ? Mv::r(1) + floating_humanizer(comb_val, true) : "RW");
+												+ (comb_val > 0 ? Mv::r(1) + floating_humanizer(comb_val, true) : L->mem_rw);
 						if (disks_io_h == 1) out += Mv::to(y+1+cy, x+1+cx) + string(5, ' ');
 						out += Mv::to(y+1+cy, x+1+cx) + io_graphs.at(mount)({comb_val}, redraw or data_same)
 							+ Mv::to(y+1+cy, x+1+cx) + Theme::c("main_fg") + humanized;
 						cy += disks_io_h;
 					}
 					else {
-						const string human_read = (disk.io_read.back() > 0 ? "▲" + floating_humanizer(disk.io_read.back(), true) : "R");
-						const string human_write = (disk.io_write.back() > 0 ? "▼" + floating_humanizer(disk.io_write.back(), true) : "W");
+						const string human_read = (disk.io_read.back() > 0 ? "▲" + floating_humanizer(disk.io_read.back(), true) : L->mem_r);
+						const string human_write = (disk.io_write.back() > 0 ? "▼" + floating_humanizer(disk.io_write.back(), true) : L->mem_w);
 						if (disks_io_h <= 3) out += Mv::to(y+1+cy, x+1+cx) + string(5, ' ') + Mv::to(y+cy + disks_io_h, x+1+cx) + string(5, ' ');
 						out += Mv::to(y+1+cy, x+1+cx) + io_graphs.at(mount + "_read")(disk.io_read, redraw or data_same) + Mv::l(disks_width)
 							+ Mv::d(1) + io_graphs.at(mount + "_write")(disk.io_write, redraw or data_same)
@@ -956,7 +956,7 @@ namespace Mem {
 						out += Mv::to(y+1+cy, x+1+cx + round((double)disks_width / 2) - round((double)human_io.size() / 2) - 1) + hu_div + human_io + hu_div;
 					if (++cy > height - 3) break;
 					if (show_io_stat and io_graphs.contains(mount + "_activity")) {
-						out += Mv::to(y+1+cy, x+1+cx) + (big_disk ? " IO% " : " IO   " + Mv::l(2)) + Theme::c("inactive_fg") + graph_bg * (disks_width - 6) + Theme::g("available").at(clamp(disk.io_activity.back(), 50ll, 100ll))
+						out += Mv::to(y+1+cy, x+1+cx) + (big_disk ? L->mem_io_pct : L->mem_io + Mv::l(2)) + Theme::c("inactive_fg") + graph_bg * (disks_width - 6) + Theme::g("available").at(clamp(disk.io_activity.back(), 50ll, 100ll))
 							+ Mv::l(disks_width - 6) + io_graphs.at(mount + "_activity")(disk.io_activity, redraw or data_same) + Theme::c("main_fg");
 						if (not big_disk) out += Mv::to(y+1+cy, x+cx+1) + Theme::c("main_fg") + human_io;
 						if (++cy > height - 3) break;

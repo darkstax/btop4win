@@ -238,7 +238,7 @@ namespace Menu {
 		auto& p_name = Proc::detailed.entry.name;
 		static string selected_signal = "";
 		static int x = 0, y = 0, i_sel = 0;
-		static const vector<string> start_index = { L->svc_auto, L->svc_manual, L->svc_disabled, "System", "Boot" };
+		static const vector<string> start_index = { L->svc_auto, L->svc_manual, L->svc_disabled, L->svc_system, L->svc_boot };
 		if (bg.empty()) selected_signal = Proc::detailed.start;
 		i_sel = v_index(start_index, selected_signal);
 		bool driver = (i_sel > 2 or Proc::detailed.service_type.ends_with("Driver"));
@@ -248,7 +248,7 @@ namespace Menu {
 		if (redraw) {
 			x = Term::width/2 - 40;
 			y = Term::height/2 - 9;
-			bg = Draw::createBox(x + 2, y, 78, 16, Theme::c("hi_fg"), true, "start-type");
+			bg = Draw::createBox(x + 2, y, 78, 16, Theme::c("hi_fg"), true, L->dlg_starttype);
 			bg += Mv::to(y+2, x+3) + Theme::c("title") + Fx::b + cjust(L->dlg_set_starttype + uresize(p_name, 30), 76);
 		}
 		else if (is_in(key, "escape", "q")) {
@@ -349,7 +349,7 @@ namespace Menu {
 			atomic_wait(Runner::active);
 			vector<string> cont_vec;
 			if (service) {
-				string action = running ? "Stop" : "Start";
+				string action = running ? L->btn_stop : L->btn_start;
 				cont_vec = {
 					Fx::b + Theme::c("main_fg") + action + ' ' + Fx::ub + Theme::c("hi_fg") + uresize(p_name, 30) + Fx::reset,
 				};
@@ -439,7 +439,7 @@ namespace Menu {
 		if (redraw) {
 			atomic_wait(Runner::active);
 			vector<string> cont_vec;
-			string action = paused ? "Continue" : "Pause";
+			string action = paused ? L->btn_continue : L->btn_pause;
 			cont_vec = {
 				Fx::b + Theme::c("main_fg") + action + ' ' + Fx::ub + Theme::c("hi_fg") + uresize(p_name, 30) + Fx::reset,
 			};
@@ -801,7 +801,7 @@ namespace Menu {
 
 			//? Category buttons
 			out += Mv::to(y+7, x+4);
-			for (int i = 0; const auto& m : {"general", "cpu", "mem", "net", "proc"}) {
+			for (int i = 0; const auto& m : {L->cat_general, L->cat_cpu, L->cat_mem, L->cat_net, L->cat_proc}) {
 				out += Fx::b + (i == selected_cat
 						? Theme::c("hi_fg") + '[' + Theme::c("title") + m + Theme::c("hi_fg") + ']'
 						: Theme::c("hi_fg") + to_string(i + 1) + Theme::c("title") + m + ' ')
@@ -849,7 +849,7 @@ namespace Menu {
 			}
 
 			if (not warnings.empty()) {
-				messageBox = msgBox{min(78, (int)ulen(warnings) + 10), msgBox::BoxTypes::OK, {uresize(warnings, 74)}, "warning"};
+				messageBox = msgBox{min(78, (int)ulen(warnings) + 10), msgBox::BoxTypes::OK, {uresize(warnings, 74)}, L->dlg_warning};
 				out += messageBox();
 			}
 
@@ -891,7 +891,7 @@ namespace Menu {
 			pages = ceil((double)get_help_text().size() / (height - 3));
 			page = 0;
 			bg = Draw::banner_gen(y, 0, true);
-			bg += Draw::createBox(x, y + 6, 78, height, Theme::c("hi_fg"), true, "help");
+			bg += Draw::createBox(x, y + 6, 78, height, Theme::c("hi_fg"), true, L->dlg_help);
 		}
 		else if (is_in(key, "escape", "q", "h", "backspace", "space", "enter", "mouse_click")) {
 			return Closed;
