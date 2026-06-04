@@ -63,6 +63,8 @@ tab-size = 4
 #include <btop_tools.hpp>
 #include <btop_draw.hpp>
 
+#include "amd_temp.hpp"
+
 #ifdef LHM_Enabled
 	#pragma comment(lib, "external\\CPPdll.lib")
 	_declspec(dllexport) std::string FetchLHMValues();
@@ -380,13 +382,17 @@ namespace Cpu {
 							hasMemory = true;
 							gpus[gpu_name].cpu_gpu = false;
 						}
-						else if (not hasMemory and linevec.front() == "D3D Shared Memory Used") {
+						else if (linevec.front() == "D3D Shared Memory Used") {
 							gpus[gpu_name].mem_used = std::stoll(linevec.at(2)) << 20ll;							
 							gpus[gpu_name].cpu_gpu = true;
 						}
 						//? Gpu mem total
 						else if (linevec.front().starts_with("GPU Memory Total") or linevec.front().starts_with("D3D Dedicated Memory Total")) {
 							gpus[gpu_name].mem_total = std::stoll(linevec.at(2)) << 20ll;
+						}
+						//? Catch other GPU temperature sensors (e.g. AMD iGPU "GPU VR SoC", "GPU Hot Spot")
+						else if (linevec.at(1) == "Temperature" and gpus[gpu_name].temp == 0) {
+							gpus[gpu_name].temp = std::stoi(linevec.at(2));
 						}
 					}
 					else {
@@ -431,6 +437,30 @@ namespace Cpu {
 				}
 				else if (mb_system > 0)
 					cpu_temps.insert(cpu_temps.begin(), mb_system);
+			}
+			//? If package temp is 0 (e.g. PawnIO MSR/SMU returned no valid reading),
+			//? fall back to motherboard sensor or core temp average
+			else if (not cpu_temps.empty() and cpu_temps.front() == 0) {
+				if (mb_cpu > 0) {
+					cpu_temps.front() = mb_cpu;
+				}
+				else if (cpu_temps.size() > 1) {
+					cpu_temps.front() = std::accumulate(cpu_temps.begin() + 1, cpu_temps.end(), 0) / (cpu_temps.size() - 1);
+				}
+				else if (mb_system > 0) {
+					cpu_temps.front() = mb_system;
+				}
+					else {
+						//? Prefer AMD iGPU temp, then any GPU
+						for (const auto& [gname, g] : gpus) {
+							if ((gname.contains("AMD") or gname.contains("Radeon")) and g.temp > 0) { cpu_temps.front() = g.temp; break; }
+						}
+						if (cpu_temps.front() == 0) {
+							for (const auto& [gname, g] : gpus) {
+								if (g.temp > 0) { cpu_temps.front() = g.temp; break; }
+							}
+						}
+					}
 			}
 
 			if (not gpus.empty()) {
@@ -997,6 +1027,8 @@ namespace Shared {
 		}
 	#else
 		Cpu::has_OHMR = false;
+		//? No LHM — try ADL for at least CPU package temp
+		AmdTemp::init();
 	#endif
 
 		init_status("CPU Init");
@@ -1214,7 +1246,16 @@ namespace Cpu {
 				cpuHz = to_string((int)round(hz)) + " MHz";
 
 			if (got_sensors) {
-				current_cpu.temp.at(0).push_back(OHMRrawStats.CPU.at(0));
+				int cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+				//? If LHM/PawnIO gives 0 for CPU package temp (AMD SMU not supported),
+				//? try reading directly from AMD ADL driver
+				if (cpu_pkg_temp == 0) {
+					static bool adl_initialized = false;
+					if (not adl_initialized) { AmdTemp::init(); adl_initialized = true; }
+					int adl_temp = AmdTemp::readCpuTemp();
+					if (adl_temp > 0) cpu_pkg_temp = adl_temp;
+				}
+				current_cpu.temp.at(0).push_back(cpu_pkg_temp);
 				if (current_cpu.temp.at(0).size() > 20) current_cpu.temp.at(0).pop_front();
 
 				for (const auto& [core, temp] : core_mapping) {
@@ -1258,6 +1299,12 @@ namespace Cpu {
 		}
 		else {
 			cpuHz = get_cpuHz();
+			//? No LHM — try ADL for CPU package temp
+			int adl_temp = AmdTemp::readCpuTemp();
+			if (adl_temp > 0) {
+				cpu.temp.at(0).push_back(adl_temp);
+				if (cpu.temp.at(0).size() > 20) cpu.temp.at(0).pop_front();
+			}
 		}
 	
 		cpu.load_avg[0] = Cpu::load_avg_1m;

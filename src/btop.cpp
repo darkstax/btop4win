@@ -37,6 +37,7 @@ tab-size = 4
 #include <btop_theme.hpp>
 #include <btop_draw.hpp>
 #include <btop_menu.hpp>
+#include "amd_temp.hpp"
 
 using std::string, std::string_view, std::vector, std::atomic, std::endl, std::cout, std::min, std::flush, std::endl;
 using std::string_literals::operator""s, std::to_string;
@@ -210,6 +211,7 @@ void clean_quit(int sig) {
 		Logger::error(Global::exit_error_msg);
 		std::cerr << Global::fg_red << "ERROR: " << Global::fg_white << Global::exit_error_msg << Fx::reset << endl;
 	}
+	AmdTemp::cleanup();
 	Logger::info("Quitting! Runtime: " + sec_to_dhms(time_s() - Global::start_time));
 
 	const auto excode = (sig != -1 ? sig : 0);

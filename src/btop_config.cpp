@@ -59,8 +59,9 @@ namespace Config {
 		{"vim_keys",			"#* Set to True to enable \"h,j,k,l,g,G\" keys for directional control in lists.\n"
 								"#* Conflicting keys for h:\"help\" and k:\"kill\" is accessible while holding shift."},
 
-		{"enable_ohmr",			"#* Enables monitoring of CPU temps, accurate CPU clock and GPU via Libre Hardware Monitor.\n"
-								"#* Needs the my DLL's from (https://github.com/aristocratos/LHM-CppExport) installed in same folder as btop4win.exe."},
+		{"enable_ohmr",			"#* Enables monitoring of CPU temps, accurate CPU clock and GPU via LibreHardwareMonitor (PawnIO backend).\n"
+								"#* Needs the DLL's from LHM-CppExport in same folder as btop4win.exe.\n"
+								"#* PawnIO driver required (https://pawnio.eu). No admin needed after driver install."},
 
 		{"show_gpu",			"#* Also show gpu stats in cpu and mem box. Needs Libre Hardware Monitor Report enabled."},
 
