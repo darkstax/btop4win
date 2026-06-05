@@ -560,8 +560,10 @@ namespace Menu {
 		static Draw::TextEdit editor;
 		static string warnings;
 		static bitset<8> selPred;
+		static const vector<string> lang_options = {"en", "zh"};
 		static const unordered_flat_map<string, std::reference_wrapper<const vector<string>>> optionsList = {
 			{"color_theme", std::cref(Theme::themes)},
+			{"lang", std::cref(lang_options)},
 			{"log_level", std::cref(Logger::log_levels)},
 			{"temp_scale", std::cref(Config::temp_scales)},
 			{"proc_sorting", std::cref(Proc::sort_vector)},
@@ -751,6 +753,10 @@ namespace Menu {
 
 				if (option == "color_theme")
 					theme_refresh = true;
+				else if (option == "lang") {
+					langInit(optList.at(i));
+					theme_refresh = true;  // force full UI redraw with new language
+				}
 				else if (option == "log_level") {
 					Logger::set(optList.at(i));
 					Logger::info("Logger set to " + optList.at(i));
