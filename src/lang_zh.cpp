@@ -276,6 +276,14 @@ static const char* zh_general_18[] = {
 	"即 \"DEBUG\" 将显示所有日志信息。",
 	nullptr
 };
+static const char* zh_general_19[] = {
+	"lang",
+	"语言。",
+	"",
+	"\"en\" 为英文。",
+	"\"zh\" 为简体中文。",
+	nullptr
+};
 
 static const Lang::OptionDesc zh_general_options[] = {
 	{zh_general_0[0],  zh_general_0+1,  11},
@@ -297,6 +305,7 @@ static const Lang::OptionDesc zh_general_options[] = {
 	{zh_general_16[0], zh_general_16+1, 6},
 	{zh_general_17[0], zh_general_17+1, 5},
 	{zh_general_18[0], zh_general_18+1, 5},
+	{zh_general_19[0], zh_general_19+1, 4},
 };
 
 // ---- CPU category ----

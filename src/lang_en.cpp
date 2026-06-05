@@ -278,6 +278,14 @@ static const char* en_general_18[] = {
 	"i.e. \"DEBUG\" will show all logging info.",
 	nullptr
 };
+static const char* en_general_19[] = {
+	"lang",
+	"Language.",
+	"",
+	"\"en\" for English.",
+	"\"zh\" for Chinese (Simplified).",
+	nullptr
+};
 
 static const Lang::OptionDesc en_general_options[] = {
 	{en_general_0[0],  en_general_0+1,  11},
@@ -299,6 +307,7 @@ static const Lang::OptionDesc en_general_options[] = {
 	{en_general_16[0], en_general_16+1, 6},
 	{en_general_17[0], en_general_17+1, 5},
 	{en_general_18[0], en_general_18+1, 6},
+	{en_general_19[0], en_general_19+1, 4},
 };
 
 // ---- CPU category ----
