@@ -821,6 +821,9 @@ const Lang LANG_EN = {
 	// ---- Memory box ----
 	.mem_total      = "Total:",
 	.mem_used       = "Used",
+	.mem_available  = "Avail",
+	.mem_cached     = "Cache",
+	.mem_committed  = "Commi",
 	.mem_free       = " Free:",
 	.mem_free_short = "F",
 	.mem_used_short = "U",

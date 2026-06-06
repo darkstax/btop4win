@@ -66,6 +66,9 @@ struct Lang {
 	// ---- Memory box ----
 	const char* mem_total;         // "Total:"
 	const char* mem_used;          // "Used"
+	const char* mem_available;     // "Avail"
+	const char* mem_cached;        // "Cache"
+	const char* mem_committed;     // "Commi"
 	const char* mem_free;          // " Free:"
 	const char* mem_free_short;    // "F"
 	const char* mem_used_short;    // "U"

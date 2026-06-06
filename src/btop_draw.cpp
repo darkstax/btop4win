@@ -1286,16 +1286,16 @@ namespace Proc {
 				if (selected == 0) Input::mouse_mappings["enter"] = {d_y, d_x + d_width - 9, 1, 6};
 
 				//? Labels
-				const int item_fit = floor((double)(d_width - 2) / 10);
-				const int item_width = floor((double)(d_width - 2) / min(item_fit, 7));
+				const int item_fit = floor((double)(d_width - 3) / 10);
+				const int item_width = floor((double)(d_width - 3) / min(item_fit, 7));
 				out += Mv::to(d_y + 1, d_x + 1) + Fx::b + Theme::c("title")
-										+ cjust(L->proc_status, item_width)
-										+ cjust(L->proc_elapsed, item_width);
-				if (item_fit >= 3) out += cjust(L->proc_ior, item_width);
-				if (item_fit >= 4) out += cjust(L->proc_iow, item_width);
-				if (item_fit >= 5) out += cjust((services ? L->proc_start : L->proc_parent), item_width);
-				if (item_fit >= 6) out += cjust((services ? L->proc_owner : L->proc_user), item_width);
-				if (item_fit >= 7) out += cjust(L->proc_threads, item_width);
+										+ cjust(L->proc_status, item_width, true)
+										+ cjust(L->proc_elapsed, item_width, true);
+				if (item_fit >= 3) out += cjust(L->proc_ior, item_width, true);
+				if (item_fit >= 4) out += cjust(L->proc_iow, item_width, true);
+				if (item_fit >= 5) out += cjust((services ? L->proc_start : L->proc_parent), item_width, true);
+				if (item_fit >= 6) out += cjust((services ? L->proc_owner : L->proc_user), item_width, true);
+				if (item_fit >= 7) out += cjust(L->proc_threads, item_width, true);
 				//if (item_fit >= 8) out += cjust("Nice:", item_width);
 
 
@@ -1392,23 +1392,23 @@ namespace Proc {
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
 					+ (is_in(sorting, "pid", "service") ? Fx::ul : "") + rjust((services ? L->proc_service : L->proc_pid), 8) + (services ? "" : Fx::uul) + ' '
 					+ (is_in(sorting, "name", "service") ? Fx::ul : "") + ljust((services ? "" : L->proc_program), prog_size) + Fx::uul + ' '
-					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + ljust((services ? L->proc_caption : L->proc_command), cmd_size) + Fx::uul : "") + ' ';
+					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + string("  ") + ljust((services ? L->proc_caption : L->proc_command), cmd_size) + Fx::uul + Mv::l(2) : "") + ' ';
 			else
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
 					+ (is_in(sorting, "pid", "name", "command") ? Fx::ul : "") + ljust(L->proc_tree, tree_size) + Fx::uul + ' ';
 
-			out += (thread_size > 0 ? Mv::l(4) + (sorting == "threads" ? Fx::ul : "") + L->proc_threads + Fx::uul : "")
-					+ (is_in(sorting, "user", "status") ? Fx::ul : "") + ljust((services ? L->proc_status : L->proc_user), user_size) + Fx::uul + ' '
-					+ (sorting == "memory" ? Fx::ul : "") + rjust((mem_bytes ? L->proc_memb : L->proc_mem_pct), 5) + Fx::uul + ' '
-					+ (sorting.starts_with("cpu") ? Fx::ul : "") + rjust(L->proc_cpu_pct, 10) + Fx::uul + Fx::ub;
+			out += (thread_size > 0 ? Mv::l(4) + string("       ") + (sorting == "threads" ? Fx::ul : "") + L->proc_threads + Fx::uul + Mv::l(7) : "")
+					+ (is_in(sorting, "user", "status") ? Fx::ul : "") + string("       ") + ljust((services ? L->proc_status : L->proc_user), user_size) + Fx::uul + Mv::l(7) + ' '
+					+ (sorting == "memory" ? Fx::ul : "") + string("          ") + rjust((mem_bytes ? L->proc_memb : L->proc_mem_pct), 5) + Fx::uul + Mv::l(10) + ' '
+					+ (sorting.starts_with("cpu") ? Fx::ul : "") + Mv::to(y+1, x + width - 7) + L->proc_cpu_pct + Fx::uul + Fx::ub;
 		}
 		//* End of redraw block
 
 		//? Draw details box if shown
 		if (show_detailed) {
 			const bool alive = detailed.status != "Stopped";
-			const int item_fit = floor((double)(d_width - 2) / 10);
-			const int item_width = floor((double)(d_width - 2) / min(item_fit, 7));
+			const int item_fit = floor((double)(d_width - 3) / 10);
+			const int item_width = floor((double)(d_width - 3) / min(item_fit, 7));
 
 			//? Graph part of box
 			string cpu_str = (alive ? to_string(detailed.entry.cpu_p) : "");
@@ -1424,13 +1424,13 @@ namespace Proc {
 			//? Info part of box
 			const string stat_color = (not alive ? Theme::c("inactive_fg") : (detailed.status == "Running" ? Theme::c("proc_misc") : Theme::c("main_fg")));
 			out += Mv::to(d_y + 2, d_x + 1) + stat_color + Fx::ub
-									+ cjust(detailed.status, item_width) + Theme::c("main_fg")
-									+ cjust(detailed.elapsed, item_width);
-			if (item_fit >= 3) out += cjust(detailed.io_read, item_width);
-			if (item_fit >= 4) out += cjust(detailed.io_write, item_width);
+									+ cjust(detailed.status, item_width, true) + Theme::c("main_fg")
+									+ cjust(detailed.elapsed, item_width, true);
+			if (item_fit >= 3) out += cjust(detailed.io_read, item_width, true);
+			if (item_fit >= 4) out += cjust(detailed.io_write, item_width, true);
 			if (item_fit >= 5) out += cjust((services ? detailed.start : detailed.parent), item_width, true);
 			if (item_fit >= 6) out += cjust((services ? detailed.owner : detailed.entry.user), item_width, true);
-			if (item_fit >= 7) out += cjust(to_string(detailed.entry.threads), item_width);
+			if (item_fit >= 7) out += cjust(to_string(detailed.entry.threads), item_width, true);
 
 
 			const double mem_p = detailed.mem_percent;
