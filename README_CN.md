@@ -179,26 +179,15 @@ Btop4win++ 使用与 btop++、bpytop 和 bashtop 相同的主题文件。
 
 3. 将 btop4win 文件夹解压到任意位置，运行 btop4win.exe。
 
-### 包管理器
+### PawnIO 驱动安装（必需）
 
-#### Scoop
+btop4win v1.0.6 起使用 PawnIO 作为温度传感器后端，需要先安装 PawnIO 驱动才能正常读取 CPU 温度：
 
-* [`btop`](https://scoop.sh/#/apps?q=btop&s=0&d=1&o=true)
-  ```powershell
-  scoop install btop
-  ```
-* [`btop-lhm`](https://scoop.sh/#/apps?q=btop-lhm&s=0&d=1&o=true)
-  ```powershell
-  scoop install btop-lhm
-  ```
+1. 访问 **[pawnio.eu](https://pawnio.eu)** 下载 PawnIO 安装包
+2. 运行安装程序，按照提示完成驱动安装（仅需一次）
+3. 安装后无需管理员权限即可运行 btop4win
 
-### PawnIO 驱动安装
-
-Release-LHM 版本使用 PawnIO 后端读取 CPU 温度和频率。如遇到温度显示异常，请确保已安装 PawnIO 驱动：
-
-→ **[https://pawnio.eu](https://pawnio.eu)**
-
-安装驱动后无需管理员权限即可运行 btop。
+> 未安装 PawnIO 将导致 CPU 温度显示异常或不可用。
 
 ## 编译
 
