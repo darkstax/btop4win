@@ -293,11 +293,11 @@ presets = "cpu:1:default,proc:0:default cpu:0:default,mem:0:default,net:0:defaul
 #* Conflicting keys for h:"help" and k:"kill" is accessible while holding shift.
 vim_keys = False
 
-#* Enables monitoring of CPU temps, accurate CPU clock and GPU via Open Hardware Monitor Report.
-#* Needs the btop modified fork (https://github.com/aristocratos/openhardwaremonitor) installed in OHMR folder where btop is installed.
+#* Enables monitoring of CPU temps, accurate CPU clock and GPU via LibreHardwareMonitor (PawnIO backend).
+#* PawnIO driver required (https://pawnio.eu). No admin needed after driver install.
 enable_ohmr = True
 
-#* Also show gpu stats in cpu and mem box. Needs Open Hardware Monitor Report enabled.
+#* Also show gpu stats in cpu and mem box. Needs LibreHardwareMonitor enabled.
 show_gpu = True
 
 #* Which GPU to display if multiple is detected.

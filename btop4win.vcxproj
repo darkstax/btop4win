@@ -298,6 +298,12 @@
       <AdditionalManifestFiles>
       </AdditionalManifestFiles>
     </Manifest>
+    <PostBuildEvent>
+      <Command>xcopy /y /e /i "$(ProjectDir)themes" "$(OutDir)themes"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy themes</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -319,6 +325,12 @@
       <AdditionalManifestFiles>
       </AdditionalManifestFiles>
     </Manifest>
+    <PostBuildEvent>
+      <Command>xcopy /y /e /i "$(ProjectDir)themes" "$(OutDir)themes"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy themes</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-LHM|x64'">
     <ClCompile>
