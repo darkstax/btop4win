@@ -1,3 +1,16 @@
+## v1.0.8 (darkstax fork)
+
+* 开始本地化进程（优先中文），新增 CJK 感知对齐基础设施
+* Added: Chinese (zh) localization — 13+ buttons, memory labels, sort options, GPU→显存
+* Added: `rjustW`/`ljustW`/`cjustW` CJK-aware alignment functions using `langDisplayWidth()`
+* Added: `langSortName()` mapping for process sort option display names
+* Fixed: UTF-8 CJK character truncation (substr → uresize with wide=true)
+* Fixed: Memory box label alignment using dynamic display-width calculation
+* Fixed: Process detail box column headers centered with `cjustW`
+* Fixed: Process list headers aligned with `ljustW`/`rjustW`
+* Fixed: Button hotkey fragments updated to complete words in lang_en.cpp
+* Changed: Button rendering uses `L->btn_*` for full localization support
+
 ## v1.0.7 (darkstax fork)
 
 * Added: AMD ADL PMLOG direct CPU temperature reading (sensor 504)
