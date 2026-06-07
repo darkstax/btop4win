@@ -24,6 +24,16 @@
 
 ## News
 
+##### 7 June 2026
+
+Release v1.0.8 (darkstax fork)
+
+开始本地化进程（优先中文），新增 CJK 感知对齐基础设施，修复中文字符截断乱码。
+
+* Added: Chinese (zh) localization — buttons, memory labels, sort options, GPU→显存
+* Added: `rjustW`/`ljustW`/`cjustW` CJK-aware alignment via `langDisplayWidth()`
+* Fixed: UTF-8 CJK truncation garbled characters (substr → uresize)
+
 ##### 4 June 2026
 
 Release v1.0.7 (darkstax fork)
