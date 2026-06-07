@@ -5,7 +5,7 @@
 ![c++20](https://img.shields.io/badge/cpp-c%2B%2B20-green)
 ![latest_release](https://img.shields.io/github/v/tag/darkstax/btop4win?label=release)
 
-
+**English** | [中文](README_CN.md)
 
 ## Index
 
@@ -45,7 +45,17 @@ Added direct AMD CPU temperature reading via ADL PMLOG sensor 504, bypassing Paw
 * Added: CPUID vendor detection for automatic temp source priority
 * Changed: AMD uses ADL first, Intel uses PawnIO/MSR first
 * Changed: UAC level from RequireAdministrator to AsInvoker (PawnIO backend)
-* Changed: Updated config/menu help text for PawnIO driver requirement
+* Changed: Updated config/menu help text for PawnIO driver requirement ([https://pawnio.eu](https://pawnio.eu))
+
+##### 2 June 2026
+
+Release v1.0.6 (darkstax fork)
+
+Switched temperature backend from the deprecated WinRing0 driver to PawnIO, enabling non-admin CPU monitoring after a one-time driver install.
+
+* Changed: LibreHardwareMonitor backend from WinRing0 to PawnIO ([https://pawnio.eu](https://pawnio.eu))
+* Changed: UAC no longer requires admin rights (PawnIO runs as a system driver)
+* Added: Initial AMD ADL temperature module
 
 ##### 12 October 2025
 
