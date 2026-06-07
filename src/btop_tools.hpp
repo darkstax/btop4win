@@ -325,6 +325,11 @@ namespace Tools {
 	//* Center justify string <str> if <x> is greater than <str> length, limit return size to <x> by default
 	string cjust(string str, const size_t x, const bool utf=false, const bool wide=false, const bool limit=true);
 
+	//* ── CJK-aware alignment wrappers (auto detect display width via langDisplayWidth) ──
+	string rjustW(const string& str, const size_t x, const bool limit=true);
+	string ljustW(const string& str, const size_t x, const bool limit=true);
+	string cjustW(const string& str, const size_t x, const bool limit=true);
+
 	//* Replace whitespaces " " with escape code for move right
 	string trans(const string& str);
 

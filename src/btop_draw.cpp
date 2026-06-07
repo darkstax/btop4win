@@ -1289,13 +1289,13 @@ namespace Proc {
 				const int item_fit = floor((double)(d_width - 3) / 10);
 				const int item_width = floor((double)(d_width - 3) / min(item_fit, 7));
 				out += Mv::to(d_y + 1, d_x + 1) + Fx::b + Theme::c("title")
-										+ cjust(L->proc_status, item_width, true)
-										+ cjust(L->proc_elapsed, item_width, true);
-				if (item_fit >= 3) out += cjust(L->proc_ior, item_width, true);
-				if (item_fit >= 4) out += cjust(L->proc_iow, item_width, true);
-				if (item_fit >= 5) out += cjust((services ? L->proc_start : L->proc_parent), item_width, true);
-				if (item_fit >= 6) out += cjust((services ? L->proc_owner : L->proc_user), item_width, true);
-				if (item_fit >= 7) out += cjust(L->proc_threads, item_width, true);
+										+ cjustW(L->proc_status, item_width)
+										+ cjustW(L->proc_elapsed, item_width);
+				if (item_fit >= 3) out += cjustW(L->proc_ior, item_width);
+				if (item_fit >= 4) out += cjustW(L->proc_iow, item_width);
+				if (item_fit >= 5) out += cjustW((services ? L->proc_start : L->proc_parent), item_width);
+				if (item_fit >= 6) out += cjustW((services ? L->proc_owner : L->proc_user), item_width);
+				if (item_fit >= 7) out += cjustW(L->proc_threads, item_width);
 				//if (item_fit >= 8) out += cjust("Nice:", item_width);
 
 
@@ -1437,7 +1437,7 @@ namespace Proc {
 			const double mem_p = detailed.mem_percent;
 			string mem_str = to_string(mem_p);
 			mem_str.resize((mem_p < 10 or mem_p >= 100 ? 3 : 4));
-			out += Mv::to(d_y + 4, d_x + 1) + Theme::c("title") + Fx::b + rjust((item_fit > 4 ? L->proc_memory : L->proc_memory_short) + mem_str + "% ", (d_width / 3) - 2)
+			out += Mv::to(d_y + 4, d_x + 1) + Theme::c("title") + Fx::b + rjustW((item_fit > 4 ? L->proc_memory : L->proc_memory_short) + mem_str + "% ", (d_width / 3) - 2)
 				+ Theme::c("inactive_fg") + Fx::ub + graph_bg * (d_width / 3) + Mv::l(d_width / 3)
 				+ Theme::c("proc_misc") + detailed_mem_graph(detailed.mem_bytes, (redraw or data_same or not alive)) + ' '
 				+ Theme::c("title") + Fx::b + detailed.memory;

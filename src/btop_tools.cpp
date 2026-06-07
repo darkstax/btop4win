@@ -40,6 +40,7 @@ tab-size = 4
 #include <btop_shared.hpp>
 #include <btop_tools.hpp>
 #include <btop_config.hpp>
+#include <lang.hpp>
 
 using std::string_view, std::max, std::floor, std::to_string, std::cin, std::cout, std::flush, robin_hood::unordered_flat_map;
 namespace fs = std::filesystem;
@@ -411,6 +412,24 @@ namespace Tools {
 			if (limit and str.size() > x) { str.resize(x); return str; }
 			return string(max((int)ceil((double)(x - str.size()) / 2), 0), ' ') + str + string(max((int)floor((double)(x - str.size()) / 2), 0), ' ');
 		}
+	}
+
+	//* ── CJK-aware alignment wrappers (use langDisplayWidth for column calculation) ──
+	string rjustW(const string& str, const size_t x, const bool limit) {
+		int dw = langDisplayWidth(str.c_str());
+		if (limit && dw > (int)x) return uresize(str, x, true);
+		return string(max((int)x - dw, 0), ' ') + str;
+	}
+	string ljustW(const string& str, const size_t x, const bool limit) {
+		int dw = langDisplayWidth(str.c_str());
+		if (limit && dw > (int)x) return uresize(str, x, true);
+		return str + string(max((int)x - dw, 0), ' ');
+	}
+	string cjustW(const string& str, const size_t x, const bool limit) {
+		int dw = langDisplayWidth(str.c_str());
+		if (limit && dw > (int)x) return uresize(str, x, true);
+		int left = max((int)ceil((double)(x - dw) / 2), 0);
+		return string(left, ' ') + str + string(max((int)x - dw - left, 0), ' ');
 	}
 
 	string trans(const string& str) {
