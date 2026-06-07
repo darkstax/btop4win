@@ -246,3 +246,4 @@ extern const Lang* L;
 
 void langInit(const std::string& code);
 int langDisplayWidth(const char* s);
+const char* langSortName(const std::string& key);

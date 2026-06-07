@@ -519,11 +519,12 @@ namespace Cpu {
 			out += box;
 
 			//? Buttons on title
-			out += Mv::to(button_y, x + 10) + title_left + Theme::c("hi_fg") + Fx::b + 'm' + Theme::c("title") + "enu" + Fx::ub + title_right;
+			out += Mv::to(button_y, x + 10) + title_left + Theme::c("hi_fg") + Fx::b + Theme::c("title") + L->btn_menu + Fx::ub + title_right;
 			Input::mouse_mappings["m"] = {button_y, x + 11, 1, 4};
-			out += Mv::to(button_y, x + 16) + title_left + Theme::c("hi_fg") + Fx::b + 'p' + Theme::c("title") + "reset "
+			out += Mv::to(button_y, x + 16) + title_left + Theme::c("hi_fg") + Fx::b + Theme::c("title") + L->btn_preset
 				+ (Config::current_preset < 0 ? "*" : to_string(Config::current_preset)) + Fx::ub + title_right;
-			Input::mouse_mappings["p"] = {button_y, x + 17, 1, 8};
+			const int preset_w = 1 + langDisplayWidth(L->btn_preset);
+			Input::mouse_mappings["p"] = {button_y, x + 17, 1, preset_w + 2};
 			const string update = to_string(Config::getI("update_ms")) + "ms";
 			out += Mv::to(button_y, x + width - update.size() - 8) + title_left + Fx::b + Theme::c("hi_fg") + "- " + Theme::c("title") + update
 				+ Theme::c("hi_fg") + " +" + Fx::ub + title_right;
@@ -845,7 +846,8 @@ namespace Mem {
 		string up = (graph_height >= 2 ? Mv::l(mem_width - 2) + Mv::u(graph_height - 1) : "");
 		bool big_mem = mem_width > 21;
 
-		out += Mv::to(y + 1, x + 2) + Theme::c("title") + Fx::b + L->mem_total + rjust(floating_humanizer(Mem::totalMem), mem_width - 9) + Fx::ub + Theme::c("main_fg");
+		int mem_total_offset = 2 + langDisplayWidth(L->mem_total) + 1;  // x-margin + label + gap
+		out += Mv::to(y + 1, x + 2) + Theme::c("title") + Fx::b + L->mem_total + rjustW(floating_humanizer(Mem::totalMem), mem_width - mem_total_offset) + Fx::ub + Theme::c("main_fg");
 		vector<string> comb_names = {"used", "available", "cached", "commit"};
 		if (show_gpu) comb_names.insert(comb_names.end(), { "gpu_used" });
 		if (show_swap and has_swap) comb_names.insert(comb_names.end(), { "page_used" });
@@ -858,8 +860,9 @@ namespace Mem {
 					if (graph_height > 0) out += Mv::to(y + 1 + cy, x + 1 + cx) + divider;
 					cy += 1;
 				}
-				out += Mv::to(y + 1 + cy, x + 1 + cx) + Theme::c("title") + Fx::b + (mem.pagevirt ? L->mem_pagevirt : L->mem_pagefiles)
-					+ rjust(floating_humanizer(mem.stats.at("page_total")), mem_width - 13) + Theme::c("main_fg") + Fx::ub;
+				const char* page_label = mem.pagevirt ? L->mem_pagevirt : L->mem_pagefiles;
+				out += Mv::to(y + 1 + cy, x + 1 + cx) + Theme::c("title") + Fx::b + page_label
+					+ rjustW(floating_humanizer(mem.stats.at("page_total")), mem_width - (3 + langDisplayWidth(page_label))) + Theme::c("main_fg") + Fx::ub;
 				cy += 1;
 				title = L->mem_used;
 			}
@@ -869,11 +872,17 @@ namespace Mem {
 					if (graph_height > 0) out += Mv::to(y + 1 + cy, x + 1 + cx) + divider;
 					cy += 1;
 				}
-				out += Mv::to(y + 1 + cy, x + 1 + cx) + Theme::c("title") + Fx::b + "GPU" + (cpu_gpu ? " Shared" : "") + ":"
-					+ rjust(floating_humanizer(mem.stats.at("gpu_total")), mem_width - 7 - (cpu_gpu ? 7 : 0)) + Theme::c("main_fg") + Fx::ub;
+				string gpu_label = string(L->mem_gpu) + (cpu_gpu ? L->mem_gpu_shared : "") + ":";
+				out += Mv::to(y + 1 + cy, x + 1 + cx) + Theme::c("title") + Fx::b + gpu_label
+					+ rjustW(floating_humanizer(mem.stats.at("gpu_total")), mem_width - (3 + langDisplayWidth(gpu_label.c_str()))) + Theme::c("main_fg") + Fx::ub;
 				cy += 1;
 				title = L->mem_used;
 			}
+			else if (name == "used") title = L->mem_used;
+			else if (name == "available") title = L->mem_available;
+			else if (name == "cached") title = L->mem_cached;
+			else if (name == "commit") title = L->mem_committed;
+			else if (name == "free") title = L->mem_free;
 			else
 				title = capitalize(name);
 
@@ -881,13 +890,13 @@ namespace Mem {
 			const int offset = max(0, divider.empty() ? 9 - (int)humanized.size() : 0);
 			const string graphics = (use_graphs ? mem_graphs.at(name)(mem.percent.at(name), redraw or data_same) : mem_meters.at(name)(mem.percent.at(name).back()));
 			if (mem_size > 2) {
-				out += Mv::to(y+1+cy, x+1+cx) + divider + title.substr(0, big_mem ? 10 : 5) + ":"
+				out += Mv::to(y+1+cy, x+1+cx) + divider + uresize(title, big_mem ? 10 : 5, true) + ":"
 					+ Mv::to(y+1+cy, x+cx + mem_width - 2 - humanized.size()) + (divider.empty() ? Mv::l(offset) + string(" ") * offset + humanized : trans(humanized))
 					+ Mv::to(y+2+cy, x+cx + (graph_height >= 2 ? 0 : 1)) + graphics + up + rjust(to_string(mem.percent.at(name).back()) + "%", 4);
 				cy += (graph_height == 0 ? 2 : graph_height + 1);
 			}
 			else {
-				out += Mv::to(y+1+cy, x+1+cx) + ljust(title, (mem_size > 1 ? 5 : 1)) + (graph_height >= 2 ? "" : " ")
+				out += Mv::to(y+1+cy, x+1+cx) + ljustW(title, (mem_size > 1 ? 5 : 1)) + (graph_height >= 2 ? "" : " ")
 					+ graphics + Theme::c("title") + rjust(humanized, (mem_size > 1 ? 9 : 7));
 				cy += (graph_height == 0 ? 1 : graph_height);
 			}
@@ -1035,17 +1044,15 @@ namespace Net {
 			Input::mouse_mappings["b"] = { y, x + width - i_size - 8, 1, 3 };
 			Input::mouse_mappings["n"] = { y, x + width - 6, 1, 3 };
 			if (width - i_size - ip_size - 20 > 4) {
-				out += Mv::to(y, x + width - i_size - 15) + title_left + Theme::c("hi_fg") + (net.stat.at("download").offset + net.stat.at("upload").offset > 0 ? Fx::bul : "") + 'z'
-					+ Theme::c("title") + "ero" + title_right;
+				out += Mv::to(y, x + width - i_size - 15) + title_left + Theme::c("hi_fg") + (net.stat.at("download").offset + net.stat.at("upload").offset > 0 ? Fx::bul : "") + Theme::c("title") + L->btn_zero + title_right;
 				Input::mouse_mappings["z"] = { y, x + width - i_size - 14, 1, 4 };
 			}
 			if (width - i_size - ip_size - 20 > 10) {
-				out += Mv::to(y, x+width - i_size - 21) + title_left + Theme::c("hi_fg") + (net_auto ? Fx::bul : "") + 'a' + Theme::c("title") + "uto" + title_right;
+				out += Mv::to(y, x+width - i_size - 21) + title_left + Theme::c("hi_fg") + (net_auto ? Fx::bul : "") + Theme::c("title") + L->btn_auto + title_right;
 				Input::mouse_mappings["a"] = {y, x+width - i_size - 20, 1, 4};
 			}
 			if (width - i_size - ip_size - 20 > 16) {
-				out += Mv::to(y, x+width - i_size - 27) + title_left + Theme::c("title") + (net_sync ? Fx::bul : "") + 's' + Theme::c("hi_fg")
-					+ 'y' + Theme::c("title") + "nc" + title_right;
+				out += Mv::to(y, x+width - i_size - 27) + title_left + Theme::c("title") + (net_sync ? Fx::bul : "") + L->btn_sync + title_right;
 				Input::mouse_mappings["y"] = {y, x+width - i_size - 26, 1, 4};
 			}
 		}
@@ -1069,11 +1076,13 @@ namespace Net {
 			out += Mv::to(b_y+1+cy, b_x+1) + Fx::ub + Theme::c("main_fg") + symbol + ' ' + ljust(speed, 10) + (b_width >= 20 ? rjust('(' + speed_bits + ')', 13) : "");
 			cy += (b_height == 5 ? 2 : 1);
 			if (b_height >= 8) {
-				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + L->net_top + rjust('(' + top, (b_width >= 20 ? 17 : 9)) + ')';
+				int top_field = (b_width >= 20 ? 17 : 9) + 5 - langDisplayWidth(L->net_top);
+				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + L->net_top + rjust('(' + top, top_field) + ')';
 				cy++;
 			}
 			if (b_height >= 6) {
-				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + L->net_total + rjust(total, (b_width >= 20 ? 16 : 8));
+				int total_field = (b_width >= 20 ? 16 : 8) + 7 - langDisplayWidth(L->net_total);
+				out += Mv::to(b_y+1+cy, b_x+1) + symbol + ' ' + L->net_total + rjust(total, total_field);
 				cy += (b_height > 6 and b_height % 2 ? 2 : 1);
 			}
 		}
@@ -1238,7 +1247,7 @@ namespace Proc {
 
 				const string& t_color = ((not services and not alive) or selected > 0 ? Theme::c("inactive_fg") : Theme::c("title"));
 				const string& hi_color = ((not services and not alive) or selected > 0 ? t_color : Theme::c("hi_fg"));
-				const string hide = (selected > 0 ? t_color + L->btn_hide : Theme::c("title") + "hide " + Theme::c("hi_fg"));
+				const string hide = (selected > 0 ? t_color + L->btn_hide : Theme::c("title") + L->btn_hide + Theme::c("hi_fg"));
 				int mouse_x = d_x + 2;
 				out += Mv::to(d_y, d_x + 1);
 				if (services) {
@@ -1269,7 +1278,7 @@ namespace Proc {
 					mouse_x += 12;
 				}
 				else {
-					out += Fx::ub + title_left + hi_color + Fx::b + 't' + t_color + "erminate" + Fx::ub + title_right;
+					out += Fx::ub + title_left + t_color + Fx::b + L->btn_terminate + Fx::ub + title_right;
 					if (alive and selected == 0) Input::mouse_mappings["t"] = { d_y, mouse_x, 1, 9 };
 					mouse_x += 11;
 				}
@@ -1317,8 +1326,8 @@ namespace Proc {
 			auto& filtering = Config::getB("proc_filtering"); // ? filter(20) : Config::getS("proc_filter"))
 			const auto filter_text = (filtering) ? filter(max(6, width - 58)) : uresize(Config::getS("proc_filter"), max(6, width - 58));
 			out += Mv::to(y, x+9) + title_left + (not filter_text.empty() ? Fx::b : "") + Theme::c("hi_fg") + 'f'
-				+ Theme::c("title") + (not filter_text.empty() ? ' ' + filter_text : "ilter")
-				+ (not filtering and not filter_text.empty() ? Theme::c("hi_fg") + " del" : "")
+				+ Theme::c("title") + (not filter_text.empty() ? ' ' + filter_text : L->btn_filter)
+				+ (not filtering and not filter_text.empty() ? Theme::c("hi_fg") + L->btn_filter_del : "")
 				+ (filtering ? Theme::c("hi_fg") + ' ' + Symbols::enter : "") + Fx::ub + title_right;
 			if (not filtering) {
 				int f_len = (filter_text.empty() ? 6 : ulen(filter_text) + 2);
@@ -1330,30 +1339,31 @@ namespace Proc {
 			}
 
 			//? per-core, reverse, tree and sorting
-			const int sort_len = sorting.size();
+			const char* sort_disp = langSortName(sorting);
+			const int sort_len = strlen(sort_disp);
 			const int sort_pos = x + width - sort_len - 8;
 
 			if (width > 65 + sort_len) {
-				out += Mv::to(y, sort_pos - 35) + title_left + (Config::getB("proc_per_core") ? Fx::bul : "") + Theme::c("title")
-					+ "per-" + Theme::c("hi_fg") + 'c' + Theme::c("title") + "ore" + Fx::ubul + title_right;
-				Input::mouse_mappings["c"] = {y, sort_pos - 34, 1, 8};
+				out += Mv::to(y, sort_pos - 33) + title_left + (Config::getB("proc_per_core") ? Fx::bul : "") + Theme::c("title")
+					+ L->btn_percore + Fx::ubul + title_right;
+				Input::mouse_mappings["c"] = {y, sort_pos - 32, 1, langDisplayWidth(L->btn_percore)};
 			}
 			if (width > 55 + sort_len) {
 				out += Mv::to(y, sort_pos - 25) + title_left + (Config::getB("proc_reversed") ? Fx::bul : "") + Theme::c("hi_fg")
-					+ 'r' + Theme::c("title") + "everse" + Fx::ubul + title_right;
-				Input::mouse_mappings["r"] = {y, sort_pos - 24, 1, 7};
+					+ L->btn_reverse + Fx::ubul + title_right;
+				Input::mouse_mappings["r"] = {y, sort_pos - 24, 1, langDisplayWidth(L->btn_reverse)};
 			}
 			if (width > 45 + sort_len) {
-				out += Mv::to(y, sort_pos - 16) + title_left + (Config::getB("proc_tree") ? Fx::bul : "") + (services ? Theme::c("inactive_fg") : Theme::c("title")) + "tre"
-					+ (services ? "" : Theme::c("hi_fg")) + 'e' + Fx::ubul + title_right;
-				Input::mouse_mappings["e"] = {y, sort_pos - 15, 1, 4};
+				out += Mv::to(y, sort_pos - 17) + title_left + (Config::getB("proc_tree") ? Fx::bul : "") + (services ? Theme::c("inactive_fg") : Theme::c("title")) + L->btn_tree
+					+ Fx::ubul + title_right;
+				Input::mouse_mappings["e"] = {y, sort_pos - 16, 1, 4};
 			}
 			if (width > 35 + sort_len) {
-				out += Mv::to(y, sort_pos - 10) + title_left + (Config::getB("proc_services") ? Fx::bul : "") + Theme::c("hi_fg") + 's' + Theme::c("title") + "ervices"
+				out += Mv::to(y, sort_pos - 10) + title_left + (Config::getB("proc_services") ? Fx::bul : "") + Theme::c("title") + L->btn_services
 					+ Fx::ubul + title_right;
-				Input::mouse_mappings["s"] = { y, sort_pos - 9, 1, 4 };
+				Input::mouse_mappings["s"] = { y, sort_pos - 9, 1, langDisplayWidth(L->btn_services) };
 			}
-			out += Mv::to(y, sort_pos) + title_left + Fx::b + Theme::c("hi_fg") + "< " + Theme::c("title") + sorting + Theme::c("hi_fg")
+			out += Mv::to(y, sort_pos) + title_left + Fx::b + Theme::c("hi_fg") + "< " + Theme::c("title") + sort_disp + Theme::c("hi_fg")
 				+ " >" + Fx::ub + title_right;
 				Input::mouse_mappings["left"] = {y, sort_pos + 1, 1, 2};
 				Input::mouse_mappings["right"] = {y, sort_pos + sort_len + 3, 1, 2};
@@ -1364,9 +1374,9 @@ namespace Proc {
 			const string hi_color = (selected == 0 ? Theme::c("inactive_fg") : Theme::c("hi_fg"));
 			int mouse_x = x + 14;
 			out += Mv::to(y + height - 1, x + 1) + title_left_down + Fx::b + hi_color + Symbols::up + Theme::c("title") + L->btn_select + down_button + Fx::ub + title_right_down
-				+ title_left_down + Fx::b + t_color + L->btn_info + hi_color + Symbols::enter + Fx::ub + title_right_down;
-				if (selected > 0) Input::mouse_mappings["enter"] = {y + height - 1, mouse_x, 1, 6};
-				mouse_x += 8;
+				+ title_left_down + Fx::b + t_color + " " + L->btn_info + hi_color + Symbols::enter + Fx::ub + title_right_down;
+				if (selected > 0) Input::mouse_mappings["enter"] = {y + height - 1, mouse_x + 1, 1, 6};
+				mouse_x += 9;
 			
 			if (services) {
 				out += title_left_down + Fx::b + t_color + "s" + hi_color + 't' + t_color + "art/s" + hi_color + 't' + t_color + "op" + Fx::ub + title_right_down;
@@ -1374,9 +1384,9 @@ namespace Proc {
 				mouse_x += 12;
 			}
 			else {
-				out += title_left_down + Fx::b + hi_color + 't' + t_color + "erminate" + Fx::ub + title_right_down;
-				if (selected > 0) Input::mouse_mappings["t"] = { y + height - 1, mouse_x, 1, 9 };
-				mouse_x += 11;
+				out += title_left_down + Fx::b + hi_color + t_color + "   " + L->btn_terminate + Fx::ub + title_right_down;
+				if (selected > 0) Input::mouse_mappings["t"] = { y + height - 1, mouse_x + 3, 1, 9 };
+				mouse_x += 14;
 			}
 			
 			/*if (width > 55) {
@@ -1391,15 +1401,15 @@ namespace Proc {
 			if (not proc_tree)
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
 					+ (is_in(sorting, "pid", "service") ? Fx::ul : "") + rjust((services ? L->proc_service : L->proc_pid), 8) + (services ? "" : Fx::uul) + ' '
-					+ (is_in(sorting, "name", "service") ? Fx::ul : "") + ljust((services ? "" : L->proc_program), prog_size) + Fx::uul + ' '
-					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + string("  ") + ljust((services ? L->proc_caption : L->proc_command), cmd_size) + Fx::uul : "") + ' ' + (cmd_size > 0 ? Mv::l(2) : "");
+					+ (is_in(sorting, "name", "service") ? Fx::ul : "") + ljustW((services ? "" : L->proc_program), prog_size) + Fx::uul + ' '
+					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + ljustW((services ? L->proc_caption : L->proc_command), cmd_size) + Fx::uul : "") + ' ';
 			else
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
-					+ (is_in(sorting, "pid", "name", "command") ? Fx::ul : "") + ljust(L->proc_tree, tree_size) + Fx::uul + ' ';
+					+ (is_in(sorting, "pid", "name", "command") ? Fx::ul : "") + ljustW(L->proc_tree, tree_size) + Fx::uul + ' ';
 
 			int right_x = x + 11 + prog_size + cmd_size;  // matches data row absolute position
 			out += (thread_size > 0 ? Mv::to(y+1, right_x) + (sorting == "threads" ? Fx::ul : "") + L->proc_threads + Fx::uul : "")
-					+ Mv::to(y+1, right_x + (thread_size > 0 ? 5 : 0) + 1) + (is_in(sorting, "user", "status") ? Fx::ul : "") + ljust((services ? L->proc_status : L->proc_user), user_size) + Fx::uul
+					+ Mv::to(y+1, right_x + (thread_size > 0 ? 5 : 0) + 1) + (is_in(sorting, "user", "status") ? Fx::ul : "") + ljustW((services ? L->proc_status : L->proc_user), user_size) + Fx::uul
 					+ Mv::to(y+1, right_x + (thread_size > 0 ? 5 : 0) + user_size + 1 + 1) + (sorting == "memory" ? Fx::ul : "") + (mem_bytes ? L->proc_memb : L->proc_mem_pct) + Fx::uul
 					+ (sorting.starts_with("cpu") ? Fx::ul : "") + Mv::to(y+1, x + width - 7) + L->proc_cpu_pct + Fx::uul + Fx::ub;
 		}
@@ -1742,7 +1752,7 @@ namespace Draw {
 
 			box = createBox(x, y, width, height, Theme::c("mem_box"), true, L->box_mem, "", 2);
 			box += Mv::to(y, (show_disks ? divider + 2 : x + width - 9)) + Theme::c("mem_box") + Symbols::title_left + (show_disks ? Fx::b : "")
-				+ Theme::c("hi_fg") + 'd' + Theme::c("title") + "isks" + Fx::ub + Theme::c("mem_box") + Symbols::title_right;
+				+ Theme::c("hi_fg") + Theme::c("title") + L->btn_disks + Fx::ub + Theme::c("mem_box") + Symbols::title_right;
 			Input::mouse_mappings["d"] = {y, (show_disks ? divider + 3 : x + width - 8), 1, 5};
 			if (show_disks) {
 				box += Mv::to(y, divider) + Symbols::div_up + Mv::to(y + height - 1, divider) + Symbols::div_down + Theme::c("div_line");

@@ -12,6 +12,23 @@ void langInit(const std::string& code) {
 		L = &LANG_EN;
 }
 
+const char* langSortName(const std::string& key) {
+	if (L == &LANG_ZH) {
+		if (key == "pid") return "PID";
+		if (key == "name" || key == "program") return "程序";
+		if (key == "command" || key == "arguments") return "命令";
+		if (key == "threads") return "线程";
+		if (key == "user") return "用户";
+		if (key == "memory") return "内存";
+		if (key == "cpu direct") return "CPU直排";
+		if (key == "cpu lazy") return "CPU缓排";
+		if (key == "service") return "服务";
+		if (key == "caption") return "标题";
+		if (key == "status") return "状态";
+	}
+	return key.c_str();
+}
+
 int langDisplayWidth(const char* s) {
 	if (!s) return 0;
 	int w = 0;
