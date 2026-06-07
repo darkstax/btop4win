@@ -240,7 +240,7 @@
       </AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)" &amp;&amp; xcopy /y /e /i "$(ProjectDir)themes" "$(OutDir)themes"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy LibreHardwareMonitor DLL's</Message>
@@ -272,7 +272,7 @@
       </AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)" &amp;&amp; xcopy /y /e /i "$(ProjectDir)themes" "$(OutDir)themes"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy LibreHardwareMonitor DLL's</Message>
@@ -343,7 +343,7 @@
       </AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)" &amp;&amp; xcopy /y /e /i "$(ProjectDir)themes" "$(OutDir)themes"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy LibreHardwareMonitor DLL's</Message>
@@ -371,7 +371,7 @@
       </AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(ProjectDir)external\*.dll" "$(OutDir)" &amp;&amp; xcopy /y /e /i "$(ProjectDir)themes" "$(OutDir)themes"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy LibreHardwareMonitor DLL's</Message>
