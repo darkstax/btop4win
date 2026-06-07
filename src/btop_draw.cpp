@@ -1392,14 +1392,15 @@ namespace Proc {
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
 					+ (is_in(sorting, "pid", "service") ? Fx::ul : "") + rjust((services ? L->proc_service : L->proc_pid), 8) + (services ? "" : Fx::uul) + ' '
 					+ (is_in(sorting, "name", "service") ? Fx::ul : "") + ljust((services ? "" : L->proc_program), prog_size) + Fx::uul + ' '
-					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + string("  ") + ljust((services ? L->proc_caption : L->proc_command), cmd_size) + Fx::uul + Mv::l(2) : "") + ' ';
+					+ (cmd_size > 0 ? (is_in(sorting, "command", "caption") ? Fx::ul : "") + string("  ") + ljust((services ? L->proc_caption : L->proc_command), cmd_size) + Fx::uul : "") + ' ' + (cmd_size > 0 ? Mv::l(2) : "");
 			else
 				out += Mv::to(y+1, x+1) + Theme::c("title") + Fx::b
 					+ (is_in(sorting, "pid", "name", "command") ? Fx::ul : "") + ljust(L->proc_tree, tree_size) + Fx::uul + ' ';
 
-			out += (thread_size > 0 ? Mv::l(4) + string("       ") + (sorting == "threads" ? Fx::ul : "") + L->proc_threads + Fx::uul + Mv::l(7) : "")
-					+ (is_in(sorting, "user", "status") ? Fx::ul : "") + string("       ") + ljust((services ? L->proc_status : L->proc_user), user_size) + Fx::uul + Mv::l(7) + ' '
-					+ (sorting == "memory" ? Fx::ul : "") + string("          ") + rjust((mem_bytes ? L->proc_memb : L->proc_mem_pct), 5) + Fx::uul + Mv::l(10) + ' '
+			int right_x = x + 11 + prog_size + cmd_size;  // matches data row absolute position
+			out += (thread_size > 0 ? Mv::to(y+1, right_x) + (sorting == "threads" ? Fx::ul : "") + L->proc_threads + Fx::uul : "")
+					+ Mv::to(y+1, right_x + (thread_size > 0 ? 5 : 0) + 1) + (is_in(sorting, "user", "status") ? Fx::ul : "") + ljust((services ? L->proc_status : L->proc_user), user_size) + Fx::uul
+					+ Mv::to(y+1, right_x + (thread_size > 0 ? 5 : 0) + user_size + 1 + 1) + (sorting == "memory" ? Fx::ul : "") + (mem_bytes ? L->proc_memb : L->proc_mem_pct) + Fx::uul
 					+ (sorting.starts_with("cpu") ? Fx::ul : "") + Mv::to(y+1, x + width - 7) + L->proc_cpu_pct + Fx::uul + Fx::ub;
 		}
 		//* End of redraw block
