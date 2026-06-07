@@ -380,6 +380,9 @@ cpu_single_graph = False
 #* Show cpu box at bottom of screen instead of top.
 cpu_bottom = False
 
+#* Show full-width cpu box.
+cpu_wide = True
+
 #* Shows the system uptime in the CPU box.
 show_uptime = True
 

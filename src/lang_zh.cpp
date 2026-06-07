@@ -773,11 +773,11 @@ const Lang LANG_ZH = {
 	},
 
 	// ---- Category tab names ----
-	.cat_general    = "general",
-	.cat_cpu        = "cpu",
-	.cat_mem        = "mem",
-	.cat_net        = "net",
-	.cat_proc       = "proc",
+	.cat_general    = "常规",
+	.cat_cpu        = "处理器",
+	.cat_mem        = "内存",
+	.cat_net        = "网络",
+	.cat_proc       = "进程",
 
 	// ---- Help menu headers ----
 	.help_key       = "按键:",

@@ -321,7 +321,7 @@ namespace Tools {
 	string luresize(string str, const size_t len, const bool wide) {
 		if (len < 1 or str.empty()) return "";
 		for (size_t x = 0, last_pos = 0, i = str.size() - 1; i > 0 ; i--) {
-			if (wide and static_cast<unsigned char>(str.at(i)) > 0xef) {
+			if (wide and static_cast<unsigned char>(str.at(i)) >= 0xe0) {
 				x += 2;
 				last_pos = max((size_t)0, i - 1);
 			}

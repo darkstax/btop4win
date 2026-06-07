@@ -333,6 +333,9 @@ cpu_single_graph = False
 #* 将 CPU 盒子显示在屏幕底部而非顶部。
 cpu_bottom = False
 
+#* 显示全宽 CPU 盒子。
+cpu_wide = True
+
 #* 在 CPU 盒子中显示系统运行时间。
 show_uptime = True
 
