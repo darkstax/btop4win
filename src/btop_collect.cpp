@@ -64,6 +64,7 @@ tab-size = 4
 #include <btop_draw.hpp>
 
 #include "amd_temp.hpp"
+#include "broker_thread.hpp"
 #include "lang.hpp"
 
 #ifdef LHM_Enabled
@@ -2159,7 +2160,50 @@ namespace Proc {
 			else {
 				throw std::runtime_error("Proc::collect() -> GetSystemTimes() failed!");
 			}
-			
+
+			//? Try Broker cache first (populated by background thread, non-blocking)
+			bool brokerOk = false;
+			if (not services) {
+				std::lock_guard lck(g_brokerCache.mtx);
+				if (g_brokerCache.proc_fresh && !g_brokerCache.proc_list.empty()) {
+					brokerOk = true;
+					found.clear();
+					current_procs.clear();
+					current_procs.reserve(g_brokerCache.proc_list.size());
+
+					for (auto& bp : g_brokerCache.proc_list) {
+						found.push_back(bp.pid);
+						proc_info pi;
+						pi.pid     = bp.pid;
+						pi.ppid    = bp.ppid;
+						pi.threads = bp.threads;
+						pi.cmd     = bp.cmd;
+						pi.user    = bp.user;
+						pi.mem     = bp.mem;
+						pi.cpu_s   = bp.cpu_s;
+						pi.state   = 'R';
+
+						pi.name = bp.name;
+						if (auto dot = pi.name.find_last_of('.'); dot != string::npos)
+							pi.name = pi.name.substr(0, dot);
+
+						if (pi.cmd.empty()) pi.cmd = pi.name;
+						if (pi.user.empty() && pi.pid < 1000) pi.user = "SYSTEM";
+						pi.short_cmd = pi.name;
+
+						// CPU%: Broker returns total system %, btop expects per-core
+						pi.cpu_p = clamp(cmult * bp.cpu_p / 10.0, 0.0, 100.0 * Shared::coreCount);
+
+						if (bp.cpu_t > 0 && bp.cpu_s > 0 && systime > bp.cpu_s)
+							pi.cpu_c = (double)bp.cpu_t / max(1ull, systime - bp.cpu_s);
+
+						current_procs.push_back(std::move(pi));
+					}
+				}
+			}
+
+			//? Fallback to local collection when Broker cache is empty
+			if (not brokerOk) {
 			//? Iterate over all processes
 			found.clear();
 			HandleWrapper pSnap(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0));
@@ -2340,6 +2384,8 @@ namespace Proc {
 			}
 
 			old_cputimes = cputimes;
+
+			}  // end if (not brokerOk)
 		}
 		
 		//* Collect info for services using WMI if currently enabled
