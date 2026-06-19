@@ -40,7 +40,6 @@ tab-size = 4
 #pragma comment( lib, "ntdll.lib" )
 #include <Pdh.h>
 #pragma comment( lib, "Pdh.lib" )
-#include <atlstr.h>
 #include <tlhelp32.h>
 #include <Psapi.h>
 #pragma comment( lib, "Psapi.lib")
@@ -1162,7 +1161,10 @@ namespace Cpu {
 			wchar_t cpuName[255];
 			DWORD BufSize = sizeof(cpuName);
 			if (RegQueryValueEx(hKey, L"ProcessorNameString", NULL, NULL, (LPBYTE)cpuName, &BufSize) == ERROR_SUCCESS) {
-				name = string(CW2A(cpuName));
+				int len = WideCharToMultiByte(CP_UTF8, 0, cpuName, -1, nullptr, 0, nullptr, nullptr);
+			string cpuNameStr(len - 1, '\0');
+			WideCharToMultiByte(CP_UTF8, 0, cpuName, -1, cpuNameStr.data(), len, nullptr, nullptr);
+			name = cpuNameStr;
 			}
 		}
 

@@ -976,7 +976,7 @@ namespace Mem {
 					if (++cy > height - 3) break;
 
 					if (cmp_less_equal(disks.size() * 3 + (show_io_stat ? disk_ios : 0), height - 1)) {
-						out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? " Used:" + rjust(to_string(disk.used_percent) + '%', 4) : L->mem_used_short) + ' '
+						out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? string(L->mem_used) + ":" + rjust(to_string(disk.used_percent) + '%', 4) : L->mem_used_short) + ' '
 							+ disk_meters_used.at(mount)(disk.used_percent) + rjust(human_used, (big_disk ? 9 : 5));
 						cy++;
 						if (cmp_less_equal(disks.size() * 4 + (show_io_stat ? disk_ios : 0), height - 1)) cy++;
