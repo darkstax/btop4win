@@ -391,6 +391,7 @@
     <ClCompile Include="src\btop_menu.cpp" />
     <ClCompile Include="src\btop_theme.cpp" />
     <ClCompile Include="src\btop_tools.cpp" />
+    <ClCompile Include="src\broker_thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\robin_hood.h" />

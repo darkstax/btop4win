@@ -6,12 +6,17 @@
 // 3. 数据写入 g_brokerCache → runner 线程只读
 // 4. 失败 >5 次自动放弃
 
-#include "broker_thread.hpp"
-#include "broker_client.hpp"
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+
+#include <thread>
+#include <chrono>
+
+#include "broker_thread.hpp"
+#include "broker_client.hpp"
+
+using std::this_thread::sleep_for;
 
 bool BrokerThread::brokerExeExists() {
 	const wchar_t* candidates[] = {
@@ -110,7 +115,7 @@ void BrokerThread::run() {
 					g_brokerCache.broker_available = true;
 				}
 
-				sleep_ms(2000);
+				sleep_for(std::chrono::milliseconds(2000));
 
 			} catch (...) {
 				client.disconnect();
@@ -121,7 +126,7 @@ void BrokerThread::run() {
 				s_unavailable = true;
 				break;
 			}
-			sleep_ms(3000);
+			sleep_for(std::chrono::milliseconds(3000));
 		}
 	}
 

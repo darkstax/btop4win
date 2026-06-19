@@ -38,6 +38,7 @@ tab-size = 4
 #include <btop_draw.hpp>
 #include <btop_menu.hpp>
 #include "amd_temp.hpp"
+#include "broker_thread.hpp"
 #include "lang.hpp"
 
 using std::string, std::string_view, std::vector, std::atomic, std::endl, std::cout, std::min, std::flush, std::endl;
@@ -200,6 +201,8 @@ void clean_quit(int sig) {
       return;
    }
 	Runner::stop();
+
+	BrokerThread::stop();
 
 	Config::write();
 
@@ -634,6 +637,9 @@ int main(int argc, char **argv) {
 	}
 
 	Draw::calcSizes();
+
+	//? Start Broker background thread (non-blocking, auto-disable if not installed)
+	BrokerThread::start();
 
 	//? Print out box outlines
 	cout << Term::sync_start << Cpu::box << Mem::box << Net::box << Proc::box << Term::sync_end << flush;
