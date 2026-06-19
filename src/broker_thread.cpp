@@ -20,6 +20,7 @@ using std::this_thread::sleep_for;
 
 bool BrokerThread::brokerExeExists() {
 	const wchar_t* candidates[] = {
+		L"%LOCALAPPDATA%\\SysMonCmdPal\\broker-staging\\SysMonBroker.exe",
 		L"%LOCALAPPDATA%\\SysMonCmdPal\\SysMonBroker.exe",
 		L"%PROGRAMFILES%\\SysMonBroker\\SysMonBroker.exe",
 	};
@@ -69,6 +70,13 @@ void BrokerThread::run() {
 				if (authResult != 0) {
 					client.disconnect();
 					failCount++;
+				} else {
+					// 认证成功 → 标记 broker 可用
+					g_brokerCache.broker_available = true;
+					// 检测 .devmode
+					wchar_t devPath[MAX_PATH];
+					ExpandEnvironmentStringsW(L"%LOCALAPPDATA%\\SysMonCmdPal\\.devmode", devPath, MAX_PATH);
+					g_brokerCache.devmode = (GetFileAttributesW(devPath) != INVALID_FILE_ATTRIBUTES);
 				}
 			} else {
 				failCount++;

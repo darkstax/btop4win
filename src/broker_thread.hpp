@@ -39,6 +39,7 @@ struct BrokerCache {
 
 	// 整体状态
 	bool broker_available = false;
+	bool devmode = false;   // .devmode 文件存在且 broker 可用
 };
 
 // 全局缓存单例

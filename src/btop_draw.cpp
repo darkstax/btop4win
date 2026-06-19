@@ -23,6 +23,7 @@ tab-size = 4
 #include <cmath>
 #include <ranges>
 
+#include "broker_thread.hpp"
 #include <btop_draw.hpp>
 #include <btop_config.hpp>
 #include <btop_theme.hpp>
@@ -526,7 +527,13 @@ namespace Cpu {
 			const int preset_w = 1 + langDisplayWidth(L->btn_preset);
 			Input::mouse_mappings["p"] = {button_y, x + 17, 1, preset_w + 2};
 			const string update = to_string(Config::getI("update_ms")) + "ms";
-			out += Mv::to(button_y, x + width - update.size() - 8) + title_left + Fx::b + Theme::c("hi_fg") + "- " + Theme::c("title") + update
+			//? devmode + broker available -> show "(broker)" indicator left of update
+			const bool show_broker = (g_brokerCache.devmode && g_brokerCache.broker_available);
+			const int broker_w = show_broker ? 9 : 0;
+			out += Mv::to(button_y, x + width - update.size() - 8 - broker_w)
+				+ title_left + Fx::b
+				+ (show_broker ? Theme::c("title") + "(broker) " + Theme::c("hi_fg") : Theme::c("hi_fg"))
+				+ "- " + Theme::c("title") + update
 				+ Theme::c("hi_fg") + " +" + Fx::ub + title_right;
 			Input::mouse_mappings["-"] = {button_y, x + width - (int)update.size() - 7, 1, 2};
 			Input::mouse_mappings["+"] = {button_y, x + width - 5, 1, 2};
@@ -976,7 +983,7 @@ namespace Mem {
 					if (++cy > height - 3) break;
 
 					if (cmp_less_equal(disks.size() * 3 + (show_io_stat ? disk_ios : 0), height - 1)) {
-						out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? string(L->mem_used) + ":" + rjust(to_string(disk.used_percent) + '%', 4) : L->mem_used_short) + ' '
+						out += Mv::to(y + 1 + cy, x + 1 + cx) + (big_disk ? Mv::r(1) + string(L->mem_used) + ":" + rjust(to_string(disk.used_percent) + '%', 4) : L->mem_used_short) + ' '
 							+ disk_meters_used.at(mount)(disk.used_percent) + rjust(human_used, (big_disk ? 9 : 5));
 						cy++;
 						if (cmp_less_equal(disks.size() * 4 + (show_io_stat ? disk_ios : 0), height - 1)) cy++;

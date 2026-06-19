@@ -1271,12 +1271,26 @@ namespace Cpu {
 			if (got_sensors) {
 				int cpu_pkg_temp;
 				if (isAmd) {
-					//? AMD: ADL (sensor 504) preferred, PawnIO as fallback
+					//? AMD: ADL preferred, Broker/LHM as fallback
 					cpu_pkg_temp = AmdTemp::readCpuTemp();
-					if (cpu_pkg_temp <= 0) cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+					if (cpu_pkg_temp <= 0) {
+						//? Try Broker sensor cache first
+						{
+							std::lock_guard lck(g_brokerCache.mtx);
+							if (g_brokerCache.sensor_fresh && g_brokerCache.cpu_temp > 0)
+								cpu_pkg_temp = (int)(g_brokerCache.cpu_temp + 0.5);
+						}
+						if (cpu_pkg_temp <= 0)
+							cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+					}
 				} else {
-					//? Intel: PawnIO/MSR preferred, no ADL available
+					//? Intel: LHM/PawnIO preferred, Broker as supplement
 					cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+					if (cpu_pkg_temp <= 0) {
+						std::lock_guard lck(g_brokerCache.mtx);
+						if (g_brokerCache.sensor_fresh && g_brokerCache.cpu_temp > 0)
+							cpu_pkg_temp = (int)(g_brokerCache.cpu_temp + 0.5);
+					}
 				}
 				current_cpu.temp.at(0).push_back(cpu_pkg_temp);
 				if (current_cpu.temp.at(0).size() > 20) current_cpu.temp.at(0).pop_front();
@@ -1290,11 +1304,22 @@ namespace Cpu {
 			}
 
 			if (has_gpu) {
+				//? Try Broker GPU data first, fall back to LHM
+				int broker_gpu_temp = -1;
+				double broker_gpu_usage = -1;
+				{
+					std::lock_guard lck(g_brokerCache.mtx);
+					if (g_brokerCache.sensor_fresh) {
+						broker_gpu_temp = (int)(g_brokerCache.gpu_temp + 0.5);
+						broker_gpu_usage = g_brokerCache.gpu_usage;
+					}
+				}
+
 				if (current_gpu != Config::getS("selected_gpu")) {
 					current_gpu = Config::getS("selected_gpu");
 					cpu.gpu_temp.clear();
 					cpu.cpu_percent.at("gpu").clear();
-					
+
 					if (current_gpu != "Auto" and not OHMRrawStats.GPUS.contains(current_gpu)) {
 						current_gpu = "Auto";
 						Config::set("selected_gpu", current_gpu);
@@ -1309,14 +1334,16 @@ namespace Cpu {
 						gpu_name = s_replace(gpu_name, s, "");
 					}
 					gpu_name = trim(gpu_name);
-					
+
 					Cpu::redraw = true;
 				}
 				const auto& gpu = OHMRrawStats.GPUS.contains(current_gpu) ? OHMRrawStats.GPUS.at(current_gpu) : OHMRrawStats.GPUS.at(Config::available_gpus.at(1));
 				gpu_clock = gpu.clock_mhz;
-				cpu.gpu_temp.push_back(gpu.temp);
+				// Use Broker GPU temp if available, otherwise LHM
+				cpu.gpu_temp.push_back(broker_gpu_temp > 0 ? broker_gpu_temp : gpu.temp);
 				if (cpu.gpu_temp.size() > 40) cpu.gpu_temp.pop_front();
-				cpu.cpu_percent.at("gpu").push_back(gpu.usage);
+				// Use Broker GPU usage if available, otherwise LHM
+				cpu.cpu_percent.at("gpu").push_back(broker_gpu_usage >= 0 ? broker_gpu_usage : gpu.usage);
 				while (cmp_greater(cpu.cpu_percent.at("gpu").size(), width * 2)) cpu.cpu_percent.at("gpu").pop_front();
 			}
 		}
