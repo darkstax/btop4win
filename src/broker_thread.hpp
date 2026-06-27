@@ -32,6 +32,7 @@ struct BrokerCache {
 
 	// 传感器数据
 	double cpu_temp = -1;
+	double cpu_clock = 0;
 	double gpu_temp = -1;
 	double gpu_usage = -1;
 	std::string gpu_name;

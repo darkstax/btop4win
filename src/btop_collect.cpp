@@ -40,7 +40,9 @@ tab-size = 4
 #pragma comment( lib, "ntdll.lib" )
 #include <Pdh.h>
 #pragma comment( lib, "Pdh.lib" )
+#include <atlstr.h>
 #include <tlhelp32.h>
+#include <atlstr.h>
 #include <Psapi.h>
 #pragma comment( lib, "Psapi.lib")
 #include <comdef.h>
@@ -1122,27 +1124,33 @@ namespace Cpu {
 	} PROCESSOR_POWER_INFORMATION, * PPROCESSOR_POWER_INFORMATION;
 
 	string get_cpuHz() {
-		static bool failed = false;
-		if (failed) return "";
-		uint64_t hz = 0;
+		static uint64_t baseMhz = 0;
+		static HQUERY hQuery = nullptr;
+		static HCOUNTER hCounter = nullptr;
+		static bool inited = false;
+
+		if (!inited) {
+			vector<PROCESSOR_POWER_INFORMATION> ppinfo(Shared::coreCount);
+			if (CallNtPowerInformation(ProcessorInformation, nullptr, 0, &ppinfo[0], Shared::coreCount * sizeof(PROCESSOR_POWER_INFORMATION)) == 0) {
+				baseMhz = ppinfo[0].MaxMhz;
+			}
+			if (baseMhz > 0 && PdhOpenQueryW(nullptr, 0, &hQuery) == ERROR_SUCCESS && hQuery) {
+				PdhAddEnglishCounterW(hQuery, L"\\Processor Information(_Total)\\% Processor Performance", 0, &hCounter);
+				PdhCollectQueryData(hQuery);
+			}
+			inited = true;
+			if (baseMhz <= 1 or baseMhz >= 1000000) return "";
+		}
+		if (baseMhz == 0 || !hQuery || !hCounter) return "";
+
+		PdhCollectQueryData(hQuery);
+		PDH_FMT_COUNTERVALUE val;
+		double hz = baseMhz;
+		if (PdhGetFormattedCounterValue(hCounter, PDH_FMT_DOUBLE, nullptr, &val) == ERROR_SUCCESS) {
+			hz = baseMhz * val.doubleValue / 100.0;
+		}
+
 		string cpuhz;
-
-		vector<PROCESSOR_POWER_INFORMATION> ppinfo(Shared::coreCount);
-
-		if (CallNtPowerInformation(ProcessorInformation, nullptr, 0, &ppinfo[0], Shared::coreCount * sizeof(PROCESSOR_POWER_INFORMATION)) != 0) {
-			Logger::warning("Cpu::get_cpuHz() -> CallNtPowerInformation() failed");
-			failed = true;
-			return "";
-		}
-
-		hz = ppinfo[0].CurrentMhz;
-
-		if (hz <= 1 or hz >= 1000000) {
-			Logger::warning("Cpu::get_cpuHz() -> Got invalid cpu mhz value");
-			failed = true;
-			return "";
-		}
-
 		if (hz >= 1000) {
 			if (hz >= 10000) cpuhz = to_string((int)round(hz / 1000));
 			else cpuhz = to_string(round(hz / 100) / 10.0).substr(0, 3);
@@ -1150,7 +1158,6 @@ namespace Cpu {
 		}
 		else if (hz > 0)
 			cpuhz = to_string((int)round(hz)) + " MHz";
-
 		return cpuhz;
 	}
 
@@ -1260,6 +1267,7 @@ namespace Cpu {
 			OHMR_trigger();
 			
 			auto hz = OHMRrawStats.CpuClock;
+			if (hz <= 0) hz = 0;
 			if (hz >= 1000) {
 				if (hz >= 10000) cpuHz = to_string((int)round(hz / 1000));
 				else cpuHz = to_string(round(hz / 100) / 10.0).substr(0, 3);
@@ -1267,6 +1275,8 @@ namespace Cpu {
 			}
 			else if (hz > 0)
 				cpuHz = to_string((int)round(hz)) + " MHz";
+			else
+				cpuHz = get_cpuHz();
 
 			if (got_sensors) {
 				int cpu_pkg_temp;
@@ -2215,7 +2225,16 @@ namespace Proc {
 							pi.name = pi.name.substr(0, dot);
 
 						if (pi.cmd.empty()) pi.cmd = pi.name;
-						if (pi.user.empty() && pi.pid < 1000) pi.user = "SYSTEM";
+						if (pi.user.empty()) {
+							if (pi.ppid != 0) {
+								auto parent = rng::find(current_procs, pi.ppid, &proc_info::pid);
+								if (parent != current_procs.end() && !parent->user.empty()
+									&& parent->user != "SYSTEM") {
+									pi.user = parent->user;
+								}
+							}
+							if (pi.user.empty()) pi.user = "SYSTEM";
+						}
 						pi.short_cmd = pi.name;
 
 						// CPU%: Broker returns total system %, btop expects per-core
@@ -2310,21 +2329,20 @@ namespace Proc {
 							}
 						}
 					}
-					if (new_proc.user.empty() and pid < 1000) new_proc.user = "SYSTEM";
+					if (new_proc.user.empty()) new_proc.user = "SYSTEM";
 					new_proc.WMI = hasWMI;
 				}
 
-				//? Use parent process username if empty
+				//? Use parent process username if empty (skip SYSTEM parents to avoid wrong propagation)
 				if (not no_cache and new_proc.user.empty()) {
 					if (new_proc.ppid != 0) {
-						if (auto parent = rng::find(current_procs, new_proc.ppid, &proc_info::pid); parent != current_procs.end()) {
+						auto parent = rng::find(current_procs, new_proc.ppid, &proc_info::pid);
+						if (parent != current_procs.end() && !parent->user.empty()
+							&& parent->user != "SYSTEM") {
 							new_proc.user = parent->user;
 						}
 					}
-					else
-						new_proc.user = "SYSTEM";
-
-					if (new_proc.user.empty()) new_proc.user = "******";
+					if (new_proc.user.empty()) new_proc.user = "SYSTEM";
 				}
 
 				new_proc.threads = pe.cntThreads;

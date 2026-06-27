@@ -527,12 +527,9 @@ namespace Cpu {
 			const int preset_w = 1 + langDisplayWidth(L->btn_preset);
 			Input::mouse_mappings["p"] = {button_y, x + 17, 1, preset_w + 2};
 			const string update = to_string(Config::getI("update_ms")) + "ms";
-			//? devmode + broker available -> show "(broker)" indicator left of update
-			const bool show_broker = (g_brokerCache.devmode && g_brokerCache.broker_available);
-			const int broker_w = show_broker ? 9 : 0;
-			out += Mv::to(button_y, x + width - update.size() - 8 - broker_w)
+			out += Mv::to(button_y, x + width - update.size() - 8)
 				+ title_left + Fx::b
-				+ (show_broker ? Theme::c("title") + "(broker) " + Theme::c("hi_fg") : Theme::c("hi_fg"))
+				+ Theme::c("hi_fg")
 				+ "- " + Theme::c("title") + update
 				+ Theme::c("hi_fg") + " +" + Fx::ub + title_right;
 			Input::mouse_mappings["-"] = {button_y, x + width - (int)update.size() - 7, 1, 2};
@@ -1705,7 +1702,9 @@ namespace Draw {
 			box = createBox(x, y, width, height, Theme::c("cpu_box"), true, (cpu_bottom ? "" : L->box_cpu), (cpu_bottom ? L->box_cpu : ""), 1);
 
 			auto& custom = Config::getS("custom_cpu_name");
-			const string cpu_title = uresize((custom.empty() ? Cpu::cpuName : custom) , b_width - 14);
+			bool show_broker = (g_brokerCache.devmode && g_brokerCache.broker_available);
+			const string cpu_title = uresize((custom.empty() ? Cpu::cpuName : custom) , b_width - 14 - (show_broker ? 9 : 0))
+				+ (show_broker ? " (broker)" : "");
 			box += createBox(b_x, b_y, b_width, b_height, "", false, cpu_title);
 		}
 
