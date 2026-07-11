@@ -21,6 +21,7 @@ tab-size = 4
 #include <ranges>
 #include <cmath>
 #include <iostream>
+#include <fstream>
 #include <semaphore>
 
 #define _WIN32_DCOM
@@ -38,6 +39,8 @@ tab-size = 4
 #include <btop_draw.hpp>
 #include <btop_menu.hpp>
 #include "amd_temp.hpp"
+#include "broker_thread.hpp"
+#include "broker_client.hpp"
 #include "lang.hpp"
 
 using std::string, std::string_view, std::vector, std::atomic, std::endl, std::cout, std::min, std::flush, std::endl;
@@ -56,7 +59,7 @@ namespace Global {
 		{"#801414", "██████╔╝   ██║   ╚██████╔╝██║        ╚═╝    ╚═╝"},
 		{"#000000", "╚═════╝    ╚═╝    ╚═════╝ ╚═╝"},
 	};
-	const string Version = "1.0.8";
+	const string Version = "1.0.9";
 
 	int coreCount;
 	string overlay;
@@ -99,6 +102,7 @@ void argumentParser(const int& argc, char **argv) {
 					<< "  -p, --preset <id>     start with preset, integer value between 0-9\n"
 					<< "  --debug               start in DEBUG mode: shows microsecond timer for information collect\n"
 					<< "                        and screen draw functions and sets loglevel to DEBUG\n"
+					<< "  --register-broker     register this exe's hash with SysMonBroker (requires broker DevMode)\n"
 					<< endl;
 			exit(0);
 		}
@@ -132,6 +136,64 @@ void argumentParser(const int& argc, char **argv) {
 		}
 		else if (argument == "--debug")
 			Global::debug = true;
+		else if (argument == "--register-broker") {
+			// 算自己的 hash → 连接 broker (DevMode) 认证 → 直接写 hash 到文件
+			HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+			if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+				cout << "[-] CoInitializeEx failed" << endl;
+				exit(1);
+			}
+			BrokerClient client;
+			if (!client.connect()) {
+				cout << "[-] Cannot connect to SysMonBroker" << endl;
+				exit(1);
+			}
+			int authResult = client.authenticate();
+			if (authResult != 0) {
+				cout << "[-] Authenticate failed: " << authResult << endl;
+				cout << "    Ensure broker is in DevMode: SysMonBroker.exe --devmode-on" << endl;
+				exit(1);
+			}
+
+			// 直接写 hash 文件 (跨进程共享, 不依赖 broker 侧写文件)
+			std::string hash = client.computeSelfHashPublic();
+			if (hash.empty()) {
+				cout << "[-] Failed to compute self hash" << endl;
+				exit(1);
+			}
+			wchar_t userProfile[MAX_PATH];
+			GetEnvironmentVariableW(L"USERPROFILE", userProfile, MAX_PATH);
+			std::wstring dir = std::wstring(userProfile) + L"\\AppData\\Local\\SysMonCmdPal";
+			CreateDirectoryW(dir.c_str(), nullptr);
+			std::wstring path = dir + L"\\registered_hashes.txt";
+
+			// 检查是否已存在
+			bool exists = false;
+			std::ifstream check(path);
+			if (check.is_open()) {
+				std::string line;
+				while (std::getline(check, line)) {
+					if (line == hash) { exists = true; break; }
+				}
+				check.close();
+			}
+			if (!exists) {
+				std::ofstream out(path, std::ios::app);
+				if (out.is_open()) {
+					out << hash << "\n";
+					out.close();
+					cout << "[+] Hash written to registered_hashes.txt" << endl;
+				} else {
+					cout << "[-] Cannot write to registered_hashes.txt" << endl;
+					exit(1);
+				}
+			} else {
+				cout << "[+] Hash already registered" << endl;
+			}
+			cout << "    Hash: " << hash.substr(0, 8) << "..." << endl;
+			cout << "    DevMode can be turned off; btop4win will still authenticate." << endl;
+			exit(0);
+		}
 		else {
 			cout << L->cli_unknown_arg << argument << "\n" <<
 			L->cli_use_help <<  endl;
@@ -200,6 +262,8 @@ void clean_quit(int sig) {
       return;
    }
 	Runner::stop();
+
+	BrokerThread::stop();
 
 	Config::write();
 
@@ -634,6 +698,9 @@ int main(int argc, char **argv) {
 	}
 
 	Draw::calcSizes();
+
+	//? Start Broker background thread (non-blocking, auto-disable if not installed)
+	BrokerThread::start();
 
 	//? Print out box outlines
 	cout << Term::sync_start << Cpu::box << Mem::box << Net::box << Proc::box << Term::sync_end << flush;

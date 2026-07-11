@@ -42,6 +42,7 @@ tab-size = 4
 #pragma comment( lib, "Pdh.lib" )
 #include <atlstr.h>
 #include <tlhelp32.h>
+#include <atlstr.h>
 #include <Psapi.h>
 #pragma comment( lib, "Psapi.lib")
 #include <comdef.h>
@@ -65,6 +66,7 @@ tab-size = 4
 #include <btop_draw.hpp>
 
 #include "amd_temp.hpp"
+#include "broker_thread.hpp"
 #include "lang.hpp"
 
 #ifdef LHM_Enabled
@@ -1122,27 +1124,33 @@ namespace Cpu {
 	} PROCESSOR_POWER_INFORMATION, * PPROCESSOR_POWER_INFORMATION;
 
 	string get_cpuHz() {
-		static bool failed = false;
-		if (failed) return "";
-		uint64_t hz = 0;
+		static uint64_t baseMhz = 0;
+		static HQUERY hQuery = nullptr;
+		static HCOUNTER hCounter = nullptr;
+		static bool inited = false;
+
+		if (!inited) {
+			vector<PROCESSOR_POWER_INFORMATION> ppinfo(Shared::coreCount);
+			if (CallNtPowerInformation(ProcessorInformation, nullptr, 0, &ppinfo[0], Shared::coreCount * sizeof(PROCESSOR_POWER_INFORMATION)) == 0) {
+				baseMhz = ppinfo[0].MaxMhz;
+			}
+			if (baseMhz > 0 && PdhOpenQueryW(nullptr, 0, &hQuery) == ERROR_SUCCESS && hQuery) {
+				PdhAddEnglishCounterW(hQuery, L"\\Processor Information(_Total)\\% Processor Performance", 0, &hCounter);
+				PdhCollectQueryData(hQuery);
+			}
+			inited = true;
+			if (baseMhz <= 1 or baseMhz >= 1000000) return "";
+		}
+		if (baseMhz == 0 || !hQuery || !hCounter) return "";
+
+		PdhCollectQueryData(hQuery);
+		PDH_FMT_COUNTERVALUE val;
+		double hz = baseMhz;
+		if (PdhGetFormattedCounterValue(hCounter, PDH_FMT_DOUBLE, nullptr, &val) == ERROR_SUCCESS) {
+			hz = baseMhz * val.doubleValue / 100.0;
+		}
+
 		string cpuhz;
-
-		vector<PROCESSOR_POWER_INFORMATION> ppinfo(Shared::coreCount);
-
-		if (CallNtPowerInformation(ProcessorInformation, nullptr, 0, &ppinfo[0], Shared::coreCount * sizeof(PROCESSOR_POWER_INFORMATION)) != 0) {
-			Logger::warning("Cpu::get_cpuHz() -> CallNtPowerInformation() failed");
-			failed = true;
-			return "";
-		}
-
-		hz = ppinfo[0].CurrentMhz;
-
-		if (hz <= 1 or hz >= 1000000) {
-			Logger::warning("Cpu::get_cpuHz() -> Got invalid cpu mhz value");
-			failed = true;
-			return "";
-		}
-
 		if (hz >= 1000) {
 			if (hz >= 10000) cpuhz = to_string((int)round(hz / 1000));
 			else cpuhz = to_string(round(hz / 100) / 10.0).substr(0, 3);
@@ -1150,7 +1158,6 @@ namespace Cpu {
 		}
 		else if (hz > 0)
 			cpuhz = to_string((int)round(hz)) + " MHz";
-
 		return cpuhz;
 	}
 
@@ -1162,7 +1169,10 @@ namespace Cpu {
 			wchar_t cpuName[255];
 			DWORD BufSize = sizeof(cpuName);
 			if (RegQueryValueEx(hKey, L"ProcessorNameString", NULL, NULL, (LPBYTE)cpuName, &BufSize) == ERROR_SUCCESS) {
-				name = string(CW2A(cpuName));
+				int len = WideCharToMultiByte(CP_UTF8, 0, cpuName, -1, nullptr, 0, nullptr, nullptr);
+			string cpuNameStr(len - 1, '\0');
+			WideCharToMultiByte(CP_UTF8, 0, cpuName, -1, cpuNameStr.data(), len, nullptr, nullptr);
+			name = cpuNameStr;
 			}
 		}
 
@@ -1257,6 +1267,7 @@ namespace Cpu {
 			OHMR_trigger();
 			
 			auto hz = OHMRrawStats.CpuClock;
+			if (hz <= 0) hz = 0;
 			if (hz >= 1000) {
 				if (hz >= 10000) cpuHz = to_string((int)round(hz / 1000));
 				else cpuHz = to_string(round(hz / 100) / 10.0).substr(0, 3);
@@ -1264,16 +1275,32 @@ namespace Cpu {
 			}
 			else if (hz > 0)
 				cpuHz = to_string((int)round(hz)) + " MHz";
+			else
+				cpuHz = get_cpuHz();
 
 			if (got_sensors) {
 				int cpu_pkg_temp;
 				if (isAmd) {
-					//? AMD: ADL (sensor 504) preferred, PawnIO as fallback
+					//? AMD: ADL preferred, Broker/LHM as fallback
 					cpu_pkg_temp = AmdTemp::readCpuTemp();
-					if (cpu_pkg_temp <= 0) cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+					if (cpu_pkg_temp <= 0) {
+						//? Try Broker sensor cache first
+						{
+							std::lock_guard lck(g_brokerCache.mtx);
+							if (g_brokerCache.sensor_fresh && g_brokerCache.cpu_temp > 0)
+								cpu_pkg_temp = (int)(g_brokerCache.cpu_temp + 0.5);
+						}
+						if (cpu_pkg_temp <= 0)
+							cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+					}
 				} else {
-					//? Intel: PawnIO/MSR preferred, no ADL available
+					//? Intel: LHM/PawnIO preferred, Broker as supplement
 					cpu_pkg_temp = OHMRrawStats.CPU.at(0);
+					if (cpu_pkg_temp <= 0) {
+						std::lock_guard lck(g_brokerCache.mtx);
+						if (g_brokerCache.sensor_fresh && g_brokerCache.cpu_temp > 0)
+							cpu_pkg_temp = (int)(g_brokerCache.cpu_temp + 0.5);
+					}
 				}
 				current_cpu.temp.at(0).push_back(cpu_pkg_temp);
 				if (current_cpu.temp.at(0).size() > 20) current_cpu.temp.at(0).pop_front();
@@ -1287,11 +1314,22 @@ namespace Cpu {
 			}
 
 			if (has_gpu) {
+				//? Try Broker GPU data first, fall back to LHM
+				int broker_gpu_temp = -1;
+				double broker_gpu_usage = -1;
+				{
+					std::lock_guard lck(g_brokerCache.mtx);
+					if (g_brokerCache.sensor_fresh) {
+						broker_gpu_temp = (int)(g_brokerCache.gpu_temp + 0.5);
+						broker_gpu_usage = g_brokerCache.gpu_usage;
+					}
+				}
+
 				if (current_gpu != Config::getS("selected_gpu")) {
 					current_gpu = Config::getS("selected_gpu");
 					cpu.gpu_temp.clear();
 					cpu.cpu_percent.at("gpu").clear();
-					
+
 					if (current_gpu != "Auto" and not OHMRrawStats.GPUS.contains(current_gpu)) {
 						current_gpu = "Auto";
 						Config::set("selected_gpu", current_gpu);
@@ -1306,14 +1344,16 @@ namespace Cpu {
 						gpu_name = s_replace(gpu_name, s, "");
 					}
 					gpu_name = trim(gpu_name);
-					
+
 					Cpu::redraw = true;
 				}
 				const auto& gpu = OHMRrawStats.GPUS.contains(current_gpu) ? OHMRrawStats.GPUS.at(current_gpu) : OHMRrawStats.GPUS.at(Config::available_gpus.at(1));
 				gpu_clock = gpu.clock_mhz;
-				cpu.gpu_temp.push_back(gpu.temp);
+				// Use Broker GPU temp if available, otherwise LHM
+				cpu.gpu_temp.push_back(broker_gpu_temp > 0 ? broker_gpu_temp : gpu.temp);
 				if (cpu.gpu_temp.size() > 40) cpu.gpu_temp.pop_front();
-				cpu.cpu_percent.at("gpu").push_back(gpu.usage);
+				// Use Broker GPU usage if available, otherwise LHM
+				cpu.cpu_percent.at("gpu").push_back(broker_gpu_usage >= 0 ? broker_gpu_usage : gpu.usage);
 				while (cmp_greater(cpu.cpu_percent.at("gpu").size(), width * 2)) cpu.cpu_percent.at("gpu").pop_front();
 			}
 		}
@@ -2157,7 +2197,59 @@ namespace Proc {
 			else {
 				throw std::runtime_error("Proc::collect() -> GetSystemTimes() failed!");
 			}
-			
+
+			//? Try Broker cache first (populated by background thread, non-blocking)
+			bool brokerOk = false;
+			if (not services) {
+				std::lock_guard lck(g_brokerCache.mtx);
+				if (g_brokerCache.proc_fresh && !g_brokerCache.proc_list.empty()) {
+					brokerOk = true;
+					found.clear();
+					current_procs.clear();
+					current_procs.reserve(g_brokerCache.proc_list.size());
+
+					for (auto& bp : g_brokerCache.proc_list) {
+						found.push_back(bp.pid);
+						proc_info pi;
+						pi.pid     = bp.pid;
+						pi.ppid    = bp.ppid;
+						pi.threads = bp.threads;
+						pi.cmd     = bp.cmd;
+						pi.user    = bp.user;
+						pi.mem     = bp.mem;
+						pi.cpu_s   = bp.cpu_s;
+						pi.state   = 'R';
+
+						pi.name = bp.name;
+						if (auto dot = pi.name.find_last_of('.'); dot != string::npos)
+							pi.name = pi.name.substr(0, dot);
+
+						if (pi.cmd.empty()) pi.cmd = pi.name;
+						if (pi.user.empty()) {
+							if (pi.ppid != 0) {
+								auto parent = rng::find(current_procs, pi.ppid, &proc_info::pid);
+								if (parent != current_procs.end() && !parent->user.empty()
+									&& parent->user != "SYSTEM") {
+									pi.user = parent->user;
+								}
+							}
+							if (pi.user.empty()) pi.user = "SYSTEM";
+						}
+						pi.short_cmd = pi.name;
+
+						// CPU%: Broker returns total system %, btop expects per-core
+						pi.cpu_p = clamp(cmult * bp.cpu_p / 10.0, 0.0, 100.0 * Shared::coreCount);
+
+						if (bp.cpu_t > 0 && bp.cpu_s > 0 && systime > bp.cpu_s)
+							pi.cpu_c = (double)bp.cpu_t / max(1ull, systime - bp.cpu_s);
+
+						current_procs.push_back(std::move(pi));
+					}
+				}
+			}
+
+			//? Fallback to local collection when Broker cache is empty
+			if (not brokerOk) {
 			//? Iterate over all processes
 			found.clear();
 			HandleWrapper pSnap(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0));
@@ -2237,21 +2329,20 @@ namespace Proc {
 							}
 						}
 					}
-					if (new_proc.user.empty() and pid < 1000) new_proc.user = "SYSTEM";
+					if (new_proc.user.empty()) new_proc.user = "SYSTEM";
 					new_proc.WMI = hasWMI;
 				}
 
-				//? Use parent process username if empty
+				//? Use parent process username if empty (skip SYSTEM parents to avoid wrong propagation)
 				if (not no_cache and new_proc.user.empty()) {
 					if (new_proc.ppid != 0) {
-						if (auto parent = rng::find(current_procs, new_proc.ppid, &proc_info::pid); parent != current_procs.end()) {
+						auto parent = rng::find(current_procs, new_proc.ppid, &proc_info::pid);
+						if (parent != current_procs.end() && !parent->user.empty()
+							&& parent->user != "SYSTEM") {
 							new_proc.user = parent->user;
 						}
 					}
-					else
-						new_proc.user = "SYSTEM";
-
-					if (new_proc.user.empty()) new_proc.user = "******";
+					if (new_proc.user.empty()) new_proc.user = "SYSTEM";
 				}
 
 				new_proc.threads = pe.cntThreads;
@@ -2338,6 +2429,8 @@ namespace Proc {
 			}
 
 			old_cputimes = cputimes;
+
+			}  // end if (not brokerOk)
 		}
 		
 		//* Collect info for services using WMI if currently enabled
